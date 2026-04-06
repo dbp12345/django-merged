@@ -1,0 +1,33 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>Транзакции: {{ object.given_name }} {{ object.family_name }} ({{ object.worker_id }})</h1>
+  {% if api_error %}
+    <p style="color:red">Ошибка API: {{ api_error }}</p>
+  {% endif %}
+
+  <table class="adminlist">
+    <thead>
+      <tr>
+        <th>paycheckId</th><th>payPeriodId</th><th>checkDate</th><th>gross</th><th>net</th><th>components</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+        <tr>
+          <td>{{ t.paycheckId|default:t.id|default:t.checkId }}</td>
+          <td>{{ t.payPeriodId|default:t.payperiodId }}</td>
+          <td>{{ t.checkDate|default:t.payDate }}</td>
+          <td>{{ t.grossAmount|default:t.gross }}</td>
+          <td>{{ t.netAmount|default:t.net }}</td>
+          <td>{{ t.checkComponents|length }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">Транзакций не найдено</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if pagination %}
+    <p>offset={{ pagination.offset }}, limit={{ pagination.limit }}, total={{ pagination.total }}</p>
+  {% endif %}
+{% endblock %}

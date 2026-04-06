@@ -1,0 +1,49 @@
+{#{% extends "admin/base_site.html" %}#}
+{#{% block content %}#}
+Very crude template for displaying speaker settings via template
+
+<ul id="contacts-list" style="list-style: none; padding: 0;">
+    {% for col_set in columns_settings %}
+        <li data-id="{{ col_set.contact_prop.id }}" class="contact-item" style="padding: 5px; border: 1px solid #ccc; margin-bottom: 5px; background: #f9f9f9;">
+            <input type="checkbox" class="visibility-toggle" data-id="{{ col_set.contact_prop.id }}" {% if col_set.visible %}checked{% endif %}>
+            {{ col_set.contact_prop.property_name }}
+        </li>
+    {% endfor %}
+</ul>
+
+{#<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>#}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let list = document.getElementById("contacts-list");
+
+        new Sortable(list, {
+            animation: 150,
+            onEnd: saveSettings
+        });
+
+        document.querySelectorAll(".visibility-toggle").forEach(input => {
+            input.addEventListener("change", saveSettings);
+        });
+
+        function saveSettings() {
+            let settings = [];
+            document.querySelectorAll(".contact-item").forEach((item, index) => {
+                settings.push({
+                    id: item.getAttribute("data-id"),
+                    order: index,
+                    visible: item.querySelector(".visibility-toggle").checked
+                });
+            });
+
+            fetch("{% url 'update_columns_settings' %}?type=EMPLOYEES_AJAX", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({settings: settings})
+            }).then(response => response.json())
+              .then(data => console.log("Настройки обновлены"));
+        }
+    });
+</script>
+{#{% endblock %}#}

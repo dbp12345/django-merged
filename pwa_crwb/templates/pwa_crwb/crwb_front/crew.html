@@ -1,0 +1,219 @@
+{% extends "pwa_crwb/base.html" %}
+
+{% block style %}
+    <style>
+        .main-container {
+            max-width: inherit;
+            overflow-x: auto;
+        }
+
+        .crew-table .name_lnk {
+            color: #309bbf;
+            margin: 0;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .crew-table {
+            display: inline-block;
+            background-color: whitesmoke;
+            white-space: nowrap;
+            color: black;
+            font-family: Arial, sans-serif;
+            font-size: small;
+            border-spacing: 1px 1px;
+            border: 3px solid rgba(255, 87, 34, 0.35);
+            border-radius: 6px;
+        }
+
+        .crew-table th {
+            padding: 5px 7px;
+            text-align: left;
+            font-weight: normal;
+            color: #405e88e3;
+        }
+
+        .crew-table tr {
+            margin: 0;
+        }
+
+        .crew-table td {
+            padding: 5px 7px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .content-bg h2 {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            padding-top: 5px;
+            position: inherit;
+            z-index: 5;
+        }
+
+        .content-bg h2 a {
+            color: whitesmoke;
+            text-decoration: none;
+            padding: 0 15px;
+            opacity: .8;
+        }
+
+        .content-bg h2 a.active {
+            text-decoration: underline;
+            color: whitesmoke;
+            opacity: 1;
+        }
+
+        #card-modal {
+            display: none;
+            overflow: auto;
+            position: fixed;
+            inset: 0;
+            background: #000a;
+            z-index: 9999;
+        }
+
+        #card-modal > div {
+            position: relative;
+            width: 80%;
+            max-width: 380px;
+            margin: 5% auto;
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 10px #000;
+        }
+
+        #card-modal .closeCardModal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        #card-modal * {
+            box-sizing: content-box;
+        }
+
+        #card-modal #print-area {
+        }
+
+        #card-modal .card-wrapper {
+            margin: 0;
+            padding: 0;
+        }
+
+        #card-modal .photo_area img {
+            color: black;
+            width: 122px;
+        }
+
+        #card-modal .card-layout {
+            height: inherit;
+        }
+
+        #card-modal .card-wrapper .button_blue {
+            display: none;
+        }
+
+        #card-modal-content {
+            color: black;
+            pointer-events: none;
+            user-select: none;
+            scale: 0.88;
+        }
+
+        #card-modal-content .employee_phone,
+        #card-modal-content .employee_email,
+        #card-modal-content .employee_status {
+            display: block;
+            margin: 5px;
+        }
+    </style>
+{% endblock %}
+{% block title %}Dispatch{% endblock %}
+{% block employee %}
+    {% if employee %}<a href="{% url 'pwa_crwb_crew' %}">{{ employee.first_name }} {{ employee.last_name }} <i>({{ employee.email }})</i></a>{% endif %}
+{% endblock %}
+
+{% block hero %}
+    <div id="card-modal">
+        <div>
+            <button class="closeCardModal" onclick="closeCardModal()">✕ Close</button>
+            <div id="card-modal-content"></div>
+        </div>
+    </div>
+    <section class="content-bg">
+        <h2>
+            <a class="active" href="{% url 'pwa_crwb_crew' %}">Crew</a>
+            <a href="{% url 'pwa_crwb_dispatch' %}">Dispatch</a>
+            <a href="{% url 'pwa_crwb_mspa' %}">MSPA</a>
+        </h2>
+        <div class="main-container">
+
+            {% if crews_list %}
+                {% for crew in crews_list %}
+                    <h2 style="margin-top: 1em;">{{ crew.crew_name }}</h2>
+
+                    <table class="crew-table">
+                        <thead class="crew-header">
+                        <tr>
+                            <th class="sortable"></th>
+                            <th class="sortable">Name</th>
+                            <th class="sortable">Job title</th>
+                            <th class="sortable">Sawyer (S-212)</th>
+                            <th class="sortable">MSPA (Driver)</th>
+                            <th class="sortable">EMT</th>
+                        </tr>
+                        </thead>
+                        <tbody class="crew-list">
+                        {% for i in crew.employees %}
+                            <tr style="background-color: {{ i.status_color }};">
+                                <td></td>
+                                <td onclick="openCardModal({{ i.id }})"><span class="name_lnk">{{ i.one|default_if_none:"-" }}</span></td>
+                                <td>{{ i.two|default_if_none:"" }}</td>
+                                <td>{{ i.three|default_if_none:"" }}</td>
+                                <td>{{ i.four|default_if_none:"" }}</td>
+                                <td>{{ i.five|default_if_none:"" }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endfor %}
+            {% else %}
+                <p>No crews available.</p>
+            {% endif %}
+
+        </div>
+    </section>
+    <script>
+        function openCardModal(id, e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const url = `{% url "pwa_crwb_card" %}?id=${id}`;
+            const target = document.getElementById("card-modal-content");
+
+            fetch(url)
+                .then(res => res.text())
+                .then(html => {
+                    target.innerHTML = html;
+                    document.getElementById("card-modal").style.display = "block";
+                });
+        }
+
+        function closeCardModal() {
+            document.getElementById("card-modal").style.display = "none";
+            document.getElementById("card-modal-content").innerHTML = "";
+        }
+    </script>
+
+
+{% endblock %}

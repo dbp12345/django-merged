@@ -1,0 +1,21 @@
+.field-fire_size input,
+.field-fuel_type input,
+.field-eval_hotline input,
+.field-hotline_shifts input,
+.field-sawyer_rating input,
+.field-attitude_rating input,
+.field-ranking input,
+.field-rating input,
+.field-total_shift_tickets input,
+.field-operational_periods input {
+    width: 90px !important;
+
+}
+
+.field-activity_code input,
+.field-activity_code input,
+.field-professionalism_rating input,
+.field-CRWB_potential input {
+    width: 120px !important;
+
+}

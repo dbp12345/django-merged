@@ -1,0 +1,18 @@
+table.grp-table tbody tr td {
+    max-width: 15vw;
+    overflow: auto;
+}
+
+table.grp-table thead th.column-old_value,
+table.grp-table tbody tr td.field-old_value,
+table.grp-table thead th.column-old_value_updated,
+table.grp-table tbody tr td.field-old_value_updated {
+    box-shadow: inset 0 0 0 9999px rgb(193 142 142 / 10%);
+}
+
+table.grp-table thead th.column-new_value,
+table.grp-table tbody tr td.field-new_value,
+table.grp-table thead th.column-new_value_updated,
+table.grp-table tbody tr td.field-new_value_updated {
+    box-shadow: inset 0 0 0 9999px rgb(114 150 130 / 10%);
+}

@@ -1,0 +1,13 @@
+#id_attached_type {
+    margin: 8px;
+    z-index: 100;
+    position: relative;
+}
+
+.help-ticket-hidden {
+    display: none !important;
+}
+
+.field-catch {
+    margin-top: -43px;
+}

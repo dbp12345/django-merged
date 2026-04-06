@@ -1,0 +1,16 @@
+{
+  "name": "Dust Busters Vehicle",
+  "short_name": "Dust-Vehicle",
+  "start_url": "/pwa",
+  "scope": "/pwa",
+  "display": "standalone",
+  "background_color": "#241f17",
+  "theme_color": "#241f17",
+  "icons": [
+    {
+      "src": "/static/pwa_vehicle/pwa/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

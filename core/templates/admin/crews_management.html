@@ -1,0 +1,612 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {#    <script src="https://cdn.jsdelivr.net/npm/interactjs"></script>#}
+    {#    <script src="{% static 'npm/interactjs/interactjs.js' %}"></script>#}
+
+    <link rel="stylesheet" href="{% static 'spinner/css/spinner.css' %}">
+    <script src="{% static 'spinner/js/spinner.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'crews_management/crews_management.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/mark.js/dist/mark.min.js"></script>
+    <script src="{% static 'crews_management/crews_management.js' %}"></script>
+    <script src="{% static 'crews_management/crews_modal.js' %}"></script>
+    <script src="{% static 'crews_management/right_click_crews.js' %}"></script>
+
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+    <script type="text/javascript" src="{% static 'employees_table/js/Sortable.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'employees_table/js/filter-advanced-settings.js' %}"></script>
+
+
+    <link href="{% static 'admin/css/modal.css' %}" rel="stylesheet"/>
+
+    {#    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>#}
+    <script type="text/javascript" src="{% static 'interact/interact.min.js' %}"></script>
+    <script>
+        let zIndexCounter = 500;
+
+        interact('.crew-zone')
+            .draggable({
+                inertia: false,
+                ignoreFrom: '.edit-one',
+                modifiers: [
+                    interact.modifiers.restrictRect({
+                        restriction: 'parent',
+                        endOnly: true
+                    })
+                ],
+                listeners: {
+                    start(event) {
+                        zIndexCounter += 1;
+                        event.target.style.zIndex = zIndexCounter;
+                        event.target.setAttribute("data-dragged", "false");
+                    },
+                    move(event) {
+                        const target = event.target;
+                        const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                        const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                        const scale = parseFloat(target.getAttribute("data-scale")) || 1;
+
+                        target.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+                        target.setAttribute('data-x', x);
+                        target.setAttribute('data-y', y);
+                        target.setAttribute("data-dragged", "true");
+                    },
+                    end(event) {
+                        const target = event.target;
+                        if (target.getAttribute("data-dragged") === "true") {
+                            target.setAttribute("data-just-dragged", "true");
+
+                            const duration = event.interaction?.inertia?.duration || 0;
+                            setTimeout(() => {
+                                target.removeAttribute("data-just-dragged");
+                            }, duration + 100);
+
+                            document.activeElement?.blur();
+                        }
+                        target.removeAttribute("data-dragged");
+
+                        const id = target.id;
+                        if (id) {
+                            const pos = {
+                                x: parseFloat(target.getAttribute("data-x")) || 0,
+                                y: parseFloat(target.getAttribute("data-y")) || 0,
+                                scale: parseFloat(target.getAttribute("data-scale")) || 1,
+                                z: parseInt(target.style.zIndex) || 500
+                            };
+                            localStorage.setItem("crew-pos-" + id, JSON.stringify(pos));
+                        }
+                    }
+                }
+            })
+
+            // 🟩 SCALE через resize
+            .resizable({
+                edges: {right: true, bottom: true},
+                listeners: {
+                    move(event) {
+                        const target = event.target;
+
+                        let scale = parseFloat(target.getAttribute("data-scale")) || 1;
+                        scale += event.deltaRect.width * 0.003;
+                        if (scale < 0.5) scale = 0.5;
+                        if (scale > 1.2) scale = 1.2;
+
+                        const x = parseFloat(target.getAttribute("data-x")) || 0;
+                        const y = parseFloat(target.getAttribute("data-y")) || 0;
+
+                        target.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+                        target.setAttribute("data-scale", scale.toFixed(2));
+
+                        const id = target.id;
+                        if (id) {
+                            const pos = {
+                                x,
+                                y,
+                                scale
+                            };
+                            localStorage.setItem("crew-pos-" + id, JSON.stringify(pos));
+                        }
+                    }
+                },
+                modifiers: [
+                    interact.modifiers.restrictEdges({
+                        outer: 'parent'
+                    })
+                ]
+            })
+        ;
+
+
+        document.addEventListener("click", function (e) {
+            const target = e.target.closest(".crew-zone");
+            if (target?.getAttribute("data-just-dragged")) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const container = document.querySelector(".crew-container");
+            const grip = container.querySelector(".resize-grip");
+
+            // 🟩 ВОССТАНОВЛЕНИЕ ВЫСОТЫ
+            const savedHeight = localStorage.getItem("crew-container-height");
+            if (savedHeight) {
+                container.style.height = savedHeight + "px";
+            }
+
+            // 🟩 ВОССТАНОВЛЕНИЕ ПОЗИЦИЙ
+            document.querySelectorAll(".crew-zone").forEach(el => {
+                const id = el.id;
+                const saved = localStorage.getItem("crew-pos-" + id);
+                if (saved) {
+                    try {
+                        const {x, y, scale, z} = JSON.parse(saved);
+                        el.setAttribute("data-x", x);
+                        el.setAttribute("data-y", y);
+                        el.setAttribute("data-scale", scale);
+                        el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+                        if (z) el.style.zIndex = z;
+                    } catch (e) {
+                        console.warn("Bad saved data:", id);
+                    }
+                }
+            });
+
+            // 🟩 РЕСАЙЗ ПО ВЕРТИКАЛИ
+            let isResizing = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            grip.addEventListener("mousedown", function (e) {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = container.offsetHeight;
+                document.body.style.cursor = "ns-resize";
+                document.body.style.userSelect = "none";
+            });
+
+            document.addEventListener("mousemove", function (e) {
+                if (!isResizing) return;
+                const dy = e.clientY - startY;
+                let newHeight = startHeight + dy;
+                if (newHeight < 150) newHeight = 150;
+
+                const containerTop = container.getBoundingClientRect().top + window.scrollY;
+                const maxHeight = document.body.scrollHeight - containerTop - 10;
+                if (newHeight > maxHeight) newHeight = maxHeight;
+
+                container.style.height = newHeight + "px";
+                localStorage.setItem("crew-container-height", newHeight);
+            });
+
+            document.addEventListener("mouseup", function () {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = "";
+                    document.body.style.userSelect = "";
+                }
+            });
+
+            // 🟩 КНОПКА СБРОСА
+            const resetBtn = document.createElement("button");
+            resetBtn.textContent = "Reset Positions";
+            resetBtn.id = "reset-positions";
+            document.body.appendChild(resetBtn);
+
+            resetBtn.addEventListener("click", () => {
+                document.querySelectorAll(".crew-zone").forEach(el => {
+                    const id = el.id;
+                    localStorage.removeItem("crew-pos-" + id);
+                    localStorage.removeItem("crew-collapsed-" + id);
+                });
+                localStorage.removeItem("crew-container-height");
+                location.reload();
+            });
+        });
+    </script>
+
+
+{% endblock %}
+
+{% block content %}
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="thin_empty" viewBox="0 1 10 10">
+            <!-- пусто -->
+        </symbol>
+
+        <symbol id="thin_bar1" viewBox="0 1 10 10">
+            <line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </symbol>
+
+        <symbol id="thin_bar2" viewBox="0 1 10 10">
+            <line x1="2" y1="3.5" x2="8" y2="3.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+            <line x1="2" y1="6.5" x2="8" y2="6.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </symbol>
+
+        <symbol id="thin_bar3" viewBox="0 1 10 10">
+            <line x1="2" y1="2.5" x2="8" y2="2.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+            <line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+            <line x1="2" y1="7.5" x2="8" y2="7.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </symbol>
+
+        <symbol id="thin_bar3_v" viewBox="0 1 10 10">
+            <line x1="2" y1="2.5" x2="8" y2="2.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+            <line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+            <line x1="2" y1="7.5" x2="8" y2="7.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+            <line x1="5" y1="2" x2="5" y2="8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </symbol>
+    </svg>
+
+    <a href="{% url "admin:company_firecrew_add" %}" class="add-crew">➕ Add Fire Crew</a>
+
+    <form id="crew-group-form" method="get" class="form-crews-group">
+        <label>
+            <select name="crew_id" onchange="this.form.submit()">
+                <option value="">— Select Crew —</option>
+                {% for crew in all_crews %}
+                    <option value="{{ crew.id }}" {% if crew.id|stringformat:"s" == request.GET.crew_id %}selected{% endif %}>
+                        {{ crew.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+        <br>
+        {% for group in groups %}
+            <label>
+                <input
+                        type="checkbox"
+                        name="group"
+                        value="{{ group }}"
+                        {% if group in selected_groups %}checked{% endif %}
+                        onchange="this.form.submit()"
+                >
+                {{ group }}
+            </label><br>
+        {% endfor %}
+    </form>
+
+
+    <div id="global-sort-bar">
+        <span class="info">Sort crews by:</span>
+        <span data-column="1">file_as</span>
+        <span data-column="2">Job title</span>
+        <span data-column="3">Sawyer</span>
+        <span data-column="4">MSPA</span>
+        <span data-column="5">EMT</span>
+        <span data-column="6">Ranking</span>
+        <span data-column="7">Rating</span>
+        <span data-column="8">DOB</span>
+    </div>
+
+    <div id="custom-context-wrapper" style="display: none; position: absolute;">
+        <label for="context-param-select">Status:</label>
+        <select id="context-param-select">
+            <option value="">— Select option —</option>
+            {% for key, val in statuses_for_change_single %}
+                <option value="{{ key }}">{{ val }}</option>
+            {% endfor %}
+        </select>
+        <label for="custom-context-menu">Crew:</label>
+        <ul id="custom-context-menu">
+            <li data-crew="">-----</li>
+            {% for crew in crews %}
+                <li data-crew-id="{{ crew.id }}">{{ crew.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div id="crew-modal" class="modal crew-zone-style">
+        <div class="modal-content">
+            {% if request.user.is_superuser %}
+                <div id="open-settings">View settings..</div>
+            {% endif %}
+            <span class="close-modal">&times;</span>
+            <h5 id="crew-modal-title"></h5>
+            <div class="modal-body">
+                <table class="crew-table">
+                    <thead class="crew-header"></thead>
+                    <tbody class="crew-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h5>Columns..</h5>
+            <div class="modal-body">
+                <div>
+                    <button class="modal-content-button" id="select-all">Select All</button>
+                    <button class="modal-content-button" id="deselect-all">Deselect All</button>
+                    <button class="modal-content-button" id="sort-alpha">Sort A-Z</button>
+                </div>
+                <ul id="contacts-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+// 🔹 Column Settings
+            let settingsModal = document.getElementById("settings-modal");
+            let openSettingsBtn = document.getElementById("open-settings");
+            let closeSettingsBtn = settingsModal.querySelector(".close-modal");
+            let contactsList = document.getElementById("contacts-list");
+            let settingsChanged = false;
+
+            if (openSettingsBtn) {
+                openSettingsBtn.addEventListener("click", function () {
+                    fetch("{% url "columns_settings_json" %}?type=CREWS_ZONES_MODAL")
+                        .then(response => response.json())
+                        .then(data => {
+                            contactsList.innerHTML = "";
+                            data.forEach(setting => {
+                                let li = document.createElement("li");
+                                li.classList.add("contact-item");
+                                li.setAttribute("data-name", setting.field_name);
+                                li.innerHTML = `
+                        <input type="checkbox" class="visibility-toggle" ${setting.visible ? "checked" : ""}>
+                        ${setting.field_name}
+                    `;
+                                contactsList.appendChild(li);
+                            });
+
+                            new Sortable(contactsList, {
+                                animation: 150,
+                                onEnd: () => settingsChanged = true
+                            });
+
+                            document.querySelectorAll(".visibility-toggle").forEach(input => {
+                                input.addEventListener("change", () => {
+                                    settingsChanged = true;
+                                });
+                            });
+
+                            settingsModal.classList.add("open");
+                        })
+                        .catch(error => console.error("Settings load error:", error));
+                });
+            }
+
+            closeSettingsBtn.addEventListener("click", function () {
+                settingsModal.classList.remove("open");
+                if (settingsChanged) {
+                    saveSettings();
+                }
+            });
+
+            function saveSettings() {
+                let visibleFields = [];
+                document.querySelectorAll(".contact-item").forEach(item => {
+                    let isChecked = item.querySelector(".visibility-toggle").checked;
+                    let name = item.getAttribute("data-name");
+                    if (isChecked) {
+                        visibleFields.push(name);
+                    }
+                });
+
+                fetch("{% url "update_columns_settings" %}?type=CREWS_ZONES_MODAL", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({columns_settings: visibleFields})
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Column settings updated");
+                        location.reload();
+                    })
+                    .catch(error => console.error("Settings save error:", error));
+            }
+
+            document.getElementById("select-all").addEventListener("click", () => {
+                document.querySelectorAll(".visibility-toggle").forEach(input => {
+                    input.checked = true;
+                });
+                settingsChanged = true;
+            });
+
+            document.getElementById("deselect-all").addEventListener("click", () => {
+                document.querySelectorAll(".visibility-toggle").forEach(input => {
+                    input.checked = false;
+                });
+                settingsChanged = true;
+            });
+
+            document.getElementById("sort-alpha").addEventListener("click", () => {
+                const items = Array.from(contactsList.querySelectorAll(".contact-item"));
+                items.sort((a, b) => {
+                    const nameA = a.getAttribute("data-name").toLowerCase();
+                    const nameB = b.getAttribute("data-name").toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+
+                items.forEach(item => contactsList.appendChild(item));
+                settingsChanged = true;
+            });
+        });
+
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // для disable-crew
+            document.querySelectorAll(".disable-crew").forEach(link => {
+                link.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const url = this.dataset.url;
+
+                    fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            "Content-Type": "application/json"
+                        }
+                    }).then(res => {
+                        if (res.ok) {
+                            this.closest(".crew-zone").remove();
+                        }
+                    });
+                });
+            });
+
+            // для collapse
+            document.querySelectorAll(".zone-collapse").forEach(link => {
+                const zone = link.closest(".crew-zone");
+                const id = zone.id;
+
+                // Восстановление состояния
+                const collapsed = localStorage.getItem("crew-collapsed-" + id);
+                if (collapsed === "true") {
+                    zone.classList.add("collapsed");
+                }
+
+                // Обработка клика
+                link.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    zone.classList.toggle("collapsed");
+                    localStorage.setItem("crew-collapsed-" + id, zone.classList.contains("collapsed"));
+                });
+            });
+
+            // для zone-statuses
+            document.querySelectorAll(".zone-statuses ul li").forEach(item => {
+                item.addEventListener("click", function () {
+                    const url = this.dataset.url;
+                    const status = this.dataset.status;
+
+                    fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({status})
+                    }).then(res => {
+                        if (res.ok) {
+                            loadEmployeesData();
+                        } else {
+                            console.error("Failed to update status");
+                        }
+                    });
+                });
+            });
+
+        });
+
+    </script>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    <div id="page-content" style="display: none;">
+        {#    <div id="open-advanced-settings">Settings..</div>#}
+        <div id="global-employee-search" style="position: fixed; top: 63px; left: 20px; z-index: 1000; background: white; padding: 4px 8px; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2);">
+            <input type="text" id="global-search-input" placeholder="🔍 Search employee by name..." style="padding: 6px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; min-width: 300px;">
+            <span id="search-results-count" style="margin-left: 10px; color: #576d8c; font-weight: bold;"></span>
+        </div>
+        <div class="crew-container">
+            {% for crew in crews %}
+                <div id="{{ crew.name }}_{{ crew.id }}" class="crew-zone{% if crew.dispatch_status %} {{ crew.dispatch_status|cut:" " }}{% endif %}" data-crew-id="{{ crew.id }}" data-x="0" data-y="0"
+                     data-scale="1">
+                    <div class="tab-link-wrap">
+                        <a class="crew disable-crew" data-url="{% url "firecrew_visible_disable" crew.id %}" href="#" rel="noopener noreferrer">✖</a>
+                        <a class="zone-collapse" href="#" rel="noopener noreferrer">⚊</a>
+                        <a class="mspa" href="/admin/crew/mspa/?crew={{ crew.id }}" target="_blank" rel="noopener noreferrer">Mspa</a>
+                        <a class="cards" href="/admin/cards/crew/?crew={{ crew.id }}" target="_blank" rel="noopener noreferrer">Cards</a>
+                        {% if crew.dispatch_id %}
+                            <a class="dispatch" href="{% url "admin:dispatch_dispatch_change" crew.dispatch_id %}" title="Edit dispatch" target="_blank" rel="noopener noreferrer">Dispatch</a>
+                        {% else %}
+                            <a class="dispatch" href="{% url "admin:dispatch_dispatch_add" %}" title="+ Add dispatch" target="_blank" rel="noopener noreferrer">Dispatch</a>
+                        {% endif %}
+                        <div class="zone-statuses">Statuses
+                            <div class="additional">
+                                <ul>
+                                    {% for key, val in statuses_for_change %}
+                                        <li data-status="{{ key }}" data-url="{% url 'firecrew_status_change' crew.id %}">{{ val }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <a class="crew-name" target="_blank" rel="noreferrer noopener"
+                       href="{% url "employees_table" %}?f__1_0__field=fire_crew__name&f__1_0__operator=equals&f__1_0__value={{ crew.name }}&f_name={{ crew.name }}"
+                       data-crew-id="{{ crew.id }}"
+                       data-content-employees="{% url "employees_table_data" %}?f__1_0__field=fire_crew__name&f__1_0__operator=equals&f__1_0__value={{ crew.name }}&f_name={{ crew.name }}&type=CREWS_ZONES_MODAL"
+                    >{{ crew.name }}{% if crew.dispatch_status %} {{ crew.dispatch_status }}{% endif %}{% if crew.dispatch_ec_number %}, E/C: {{ crew.dispatch_ec_number }}{% endif %}
+                        {% if crew.dispatch_company %}, {{ crew.dispatch_company }}{% endif %}</a>
+                    <div class="counters">
+                        <span class="crew-counter-fft1">?</span>
+                        <span class="crew-counter-saw red">?</span>
+                        <span class="crew-counter-mspa">?</span>
+                        <span class="crew-counter">?</span>
+                    </div>
+                    <table class="crew-table">
+                        <thead class="crew-header">
+                        <tr>
+                            <th></th>
+                            <th>file_as</th>
+                            <th>Job title</th>
+                            <th>Sawyer (S-212)</th>
+                            <th>MSPA (Driver)</th>
+                            <th>EMT</th>
+                            <th>Ranking</th>
+                            <th>Rating</th>
+                            <th>DOB</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody class="crew-list">
+                        {#                        {% for _ in ""|rjust:crew.employees.count %}#}
+                        {#                            <tr>#}
+                        {#                                <td></td>#}
+                        {#                                <td></td>#}
+                        {#                                <td></td>#}
+                        {#                                <td></td>#}
+                        {#                                <td></td>#}
+                        {#                                <td></td>#}
+                        {#                            </tr>#}
+                        {#                        {% endfor %}#}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
+            <div class="resize-grip"></div>
+        </div>
+
+        <div class="tables-container">
+            {% for filter in filters %}
+                <div class="table-wrapper" data-filter-id="{{ filter.id }}">
+                    <div class="open-advanced-settings" data-id="{{ filter.id }}">☷</div>
+                    <div class="table-header">
+                        <div class="counters">
+                            <span class="filter-counter">0</span>
+                        </div>
+                        <select class="employee-filter">
+                            {% for f in filters_all %}
+                                <option value="{{ f.id }}" {% if f.id == filter.id %}selected{% endif %}>
+                                    {{ f.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" class="table-search" placeholder="Search...">
+                    </div>
+                    <table class="employee-table">
+                        <thead>
+                        <tr class="dynamic-header-row"></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "pwa_crwb/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block hero %}
+<section class="content-bg">
+    <div class="main-container">
+        <h2>Login</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input name="raw_input" placeholder="">
+
+            {% if error %}
+                <p><span class="error">{{ error }}</span></p>
+            {% endif %}
+
+            <button type="submit">Login</button>
+        </form>
+{#        <a href="{% url 'pwa_crwb_register' %}">Register</a>#}
+    </div>
+</section>
+{% endblock %}

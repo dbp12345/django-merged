@@ -1,0 +1,9 @@
+/*.inline-related .formset {*/
+/*    display: none;*/
+/*}*/
+fieldset.collapsible {
+    overflow: hidden;
+    height: 40px;
+    transition: height 0.1s ease-in-out;
+    /*padding-bottom: 35px;*/
+}

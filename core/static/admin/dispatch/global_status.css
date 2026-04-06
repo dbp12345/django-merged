@@ -1,0 +1,22 @@
+.button.set_global_status.on_fire,
+.button.set_global_status.not_on_fire {
+    border: 1px solid;
+    border-radius: 3px;
+    padding: 2px 5px;
+    margin-right: 3px;
+    top: 0;
+    opacity: 0.4;
+}
+
+.button.set_global_status.on_fire:hover,
+.button.set_global_status.not_on_fire:hover {
+    opacity: 1;
+}
+
+.button.set_global_status.on_fire {
+    color: red;
+}
+
+.button.set_global_status.not_on_fire {
+    color: #309bbf;
+}

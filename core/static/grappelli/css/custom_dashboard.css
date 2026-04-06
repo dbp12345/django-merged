@@ -1,0 +1,27 @@
+.grp-module .grp-row,
+.grp-module .grp-row > *{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+a[href$="/admin/crews-management/"] {
+    color: #2f89ba;
+    font-size: 12px;
+    text-decoration: underline;
+}
+
+a[href$="/admin/employees-table/"] {
+    color: #2f89ba;
+    font-size: 12px;
+    text-decoration: underline;
+}
+.equipment-type-list a.grp-link-internal {
+    padding-left: 0;
+    background-image: none;
+}
+.my-help-tickets-list a.grp-link-internal {
+    color: #cc6b6b;
+    background-image: none;
+    padding-left: 0;
+}

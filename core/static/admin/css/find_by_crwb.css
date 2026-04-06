@@ -1,0 +1,99 @@
+.crwb-wrap {
+    max-width: 1200px;
+}
+
+.crwb-controls {
+    margin: 8px 0 14px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.crwb-controls input {
+    width: 1000px;
+    padding: 16px 10px;
+}
+
+.crwb-table-wrap {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: auto;
+    background: #fff;
+}
+
+table.crwb {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+}
+
+.crwb thead th {
+    position: sticky;
+    top: 0;
+    color: #eff0e8;
+    font-variant: all-small-caps;
+    font-size: 18px;
+    font-family: monospace;
+    background: linear-gradient(#1e4452e3, #405e88e3);
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    padding: 6px 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.crwb tbody td {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 8px 12px;
+    vertical-align: top;
+}
+
+/*.crwb tbody tr:nth-child(odd) {*/
+/*    background: #fcfcfd;*/
+/*}*/
+
+.crwb .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.crwb .name a {
+    text-decoration: none;
+}
+
+.crwb .name a:hover {
+    text-decoration: underline;
+}
+
+/* Обёртка и спинер в инпуте */
+.crwb-input-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.crwb-input {
+    padding-right: 28px;
+}
+
+.crwb-input-wrap.is-loading::after {
+    content: "";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    border: 2px solid #bbb;
+    border-top-color: #555;
+    border-radius: 50%;
+    animation: crwb-spin 0.8s linear infinite;
+}
+
+@keyframes crwb-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,34 @@
+# Project Coding Rules
+
+## Code Comments
+- All code comments, docstrings, and inline documentation MUST be written in English
+- This applies to:
+  - Function and class docstrings
+  - Inline comments
+  - TODO comments
+  - Code explanations
+  - Variable descriptions
+
+## Language Preference
+- Code: English
+- Comments: English
+- Documentation: English
+- Variable names: English
+- Function names: English
+
+## Exception
+- User-facing strings (UI messages, error messages shown to users) can be in any language as needed for the application
+
+## Code Modification Workflow
+- When user asks questions or describes problems, DO NOT immediately make code changes
+- First: Analyze the problem, understand the context, ask clarifying questions if needed
+- Second: Propose solutions or explain the approach
+- Third: Wait for explicit user command (like "do it", "fix it", "implement") before making any code changes
+- Only make code changes when user explicitly requests them
+- If user asks "is this correct?" or "should I do this?" - provide analysis and recommendations, but do NOT implement changes
+
+## Code Style & Formatting
+- Follow PEP 8 style guide for Python code
+- Use 4 spaces for indentation (no tabs)
+- Maximum line length: 120 characters (prefer 100 when possible)
+- Use double quotes for strings (consistent with Django conventions)

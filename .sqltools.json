@@ -1,0 +1,16 @@
+{
+  "connections": [
+    {
+      "name": "dbfightfire (Local)",
+      "driver": "MySQL",
+      "server": "127.0.0.1",
+      "port": 3307,
+      "database": "${env:DB_NAME}",
+      "username": "root",
+      "password": "${env:DB_PASSWORD}",
+      "connectionTimeout": 30,
+      "connectionLimit": 1,
+      "previewLimit": 50
+    }
+  ]
+}

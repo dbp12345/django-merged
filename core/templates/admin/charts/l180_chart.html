@@ -1,0 +1,65 @@
+<script>
+    $(document).ready(function () {
+        {% comment %}
+                    fetch('/admin/metrics-charts-data/')
+                    .then(response => response.json())
+                    .then(data => {
+                        var ctx = document.getElementById('myChart').getContext('2d');
+                        var myChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    label: 'Сотрудники',
+                                    data: data.data,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                                }]
+                            }
+                        });
+                    });
+        {% endcomment %}
+
+
+        const data2024 = [5, 7, 8, 6, 4, 5, 9, 10, 8, 6, 7, 5];
+        const data2025 = [6, 8, 7, 5, 5, 6, 10, 13, 7, 5, 8, 6];
+
+        const total2024 = data2024.reduce((a, b) => a + b, 0);
+        const total2025 = data2025.reduce((a, b) => a + b, 0);
+
+        const ctx = document.getElementById("l180Chart").getContext("2d");
+
+        const webinarsChart = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: ["2024", "2025"],
+                datasets: [{
+                    data: [total2024, total2025],
+                    backgroundColor: ["rgba(75, 192, 192, 0.6)", "rgba(255, 99, 132, 0.6)"],
+                    borderColor: ["rgba(75, 192, 192, 1)", "rgba(255, 99, 132, 1)"],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Total L-180 Webinars Comparison: 2024 vs 2025",
+                        font: {
+                            size: 14
+                        }
+                    },
+                    legend: {
+                        position: "top"
+                    }
+                }
+            }
+        });
+
+
+    });
+</script>
+<style>
+</style>
+
+<canvas id="l180Chart" width="460" height="200"></canvas>

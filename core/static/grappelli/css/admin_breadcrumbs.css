@@ -1,0 +1,27 @@
+#grp-breadcrumbs ul{
+    color: #444;
+}
+#grp-breadcrumbs>ul li{
+    color: #444;
+    line-height: 16px;
+}
+
+#grp-content-title h1 {
+    font-style: italic;
+    padding: 0 0 5px;
+    font-size: medium;
+}
+
+/*button {*/
+/*    height: auto;*/
+/*    width: auto;*/
+/*}*/
+
+*:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.grp-pulldown-container.grp-pulldown-state-open .grp-pulldown-content {
+    padding: 8px
+}

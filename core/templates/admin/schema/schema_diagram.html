@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <p><a class="button" href=".">Rebuild</a></p>
+    <div style="max-width:100%; overflow:auto;">
+        <img src="{{ img_url }}" alt="schema" style="max-width:100%; height:auto;">
+    </div>
+{% endblock %}

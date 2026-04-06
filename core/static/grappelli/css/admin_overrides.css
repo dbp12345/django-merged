@@ -1,0 +1,29 @@
+ul.grp-tools.grp-related-widget-tools > li > a.add-related,
+ul.grp-tools.grp-related-widget-tools > li > a.add-another {
+  display: none !important;
+}
+
+.grp-td.tag ul.grp-tools.grp-related-widget-tools > li > a.add-related,
+.grp-td.tag ul.grp-tools.grp-related-widget-tools > li > a.add-another {
+  display: inline-block !important;
+}
+
+#daf-edit-layout-dialog .daf-field-card {
+  padding: 0px 0px 0px 14px;
+}
+
+#daf-edit-layout-dialog .daf-edit-layout-dialog-content {
+  padding-right: 0;
+}
+
+#daf-edit-layout-dialog .daf-fields-container {
+  gap: 0;
+}
+
+#daf-edit-layout-fields-container .daf-field-card-toggle-button {
+  box-shadow: 0px 0px 0px 14px white inset;
+  padding: 20px 38px;
+  border: 0 none;
+  width: 110px;
+  outline: 3px solid white;
+}

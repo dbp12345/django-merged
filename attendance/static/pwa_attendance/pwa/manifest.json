@@ -1,0 +1,16 @@
+{
+  "name": "DB Attendance",
+  "short_name": "Dust-Attendance",
+  "start_url": "/attendance",
+  "scope": "/attendance",
+  "display": "standalone",
+  "background_color": "#241f17",
+  "theme_color": "#241f17",
+  "icons": [
+    {
+      "src": "/static/pwa_vehicle/pwa/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

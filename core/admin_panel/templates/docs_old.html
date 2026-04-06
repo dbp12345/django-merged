@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <ul>
+        {% for key, url in urls.items %}
+            <li><a href="{{ url }}">{{ key }}</a></li>
+        {% endfor %}
+    </ul>
+   {{ html_content|safe }}
+{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+{% endblock %}
+
+

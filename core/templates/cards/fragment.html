@@ -1,0 +1,235 @@
+{% load static %}
+{% load thumbnail %}
+<link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+<script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static '/card/card_print.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static '/admin/css/buttons.css' %}">
+
+{#<link href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet">#}
+{#<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>#}
+
+<link href="{% static 'cropper/cropper.min.css' %}" rel="stylesheet"/>
+<script type="text/javascript" src="{% static 'cropper/cropper.min.js' %}"></script>
+
+
+<script type="text/javascript" src="{% static 'html2canvas/html2canvas.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'jspdf/jspdf.umd.min.js' %}"></script>
+
+<script>
+    function setScale(val) {
+        const el = document.getElementById("print-area");
+        el.style.transform = `scale(${val})`;
+    }
+
+    function printPopup() {
+        const content = document.getElementById("print-area").innerHTML;
+        const win = window.open("", "_blank");
+        const cssHref = `${window.location.origin}/static/card/card_print.css`;
+
+        win.document.open();
+        win.document.write(`
+              <html>
+                <head>
+                  <title>Print Card</title>
+                  <link rel="stylesheet" type="text/css" href="${cssHref}">
+                </head>
+                <body onload="window.print(); window.close();">
+                  <div class="print-wrapper">
+                    <div class="print-area" style="transform: scale(${currentScale}); transform-origin: center top;">
+                      ${content}
+                    </div>
+                  </div>
+                </body>
+              </html>
+            `);
+        win.document.close();
+    }
+
+
+    let currentScale = 1.0;
+
+    function updateScale(val) {
+        currentScale = parseFloat(val);
+        setScale(currentScale);
+    }
+</script>
+
+<script>
+    function cycleCircleColor(el) {
+        const colors = ["red", "yellow", "blue"];
+        const current = colors.findIndex(c => el.classList.contains(c));
+        const next = (current + 1) % colors.length;
+
+        el.classList.remove(colors[current]);
+        el.classList.add(colors[next]);
+    }
+</script>
+
+<script>
+    window.addEventListener('DOMContentLoaded', function () {
+        var image = document.querySelector('#image');
+        var cropper = new Cropper(image, {
+            minContainerWidth: 122,
+            minContainerHeight: 140,
+            viewMode: 3,
+            dragMode: 'move',
+            autoCropArea: 1,
+            restore: false,
+            modal: false,
+            guides: false,
+            responsive: false,
+            highlight: false,
+            cropBoxMovable: false,
+            cropBoxResizable: false,
+            toggleDragModeOnDblclick: false,
+        });
+    });
+</script>
+
+<script>
+    function syncCompanyText(select) {
+        document.getElementById("company-print-text").textContent = select.value;
+    }
+</script>
+
+<script>
+    function downloadCard() {
+        const element = document.getElementById('print-area');
+
+        return html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/jpeg', 1); // JPEG с качеством 80%
+            
+            const pdf = new jspdf.jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height],
+                compress: true  // Включить компрессию PDF
+            });
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height, undefined, 'FAST');
+            pdf.save('{{ employee_name }}.pdf');
+        });
+    }
+</script>
+
+<script>
+    // Auto-download PDF if pdf parameter is present in URL
+    window.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pdfParam = urlParams.get('pdf');
+        
+        // Check if pdf parameter exists (can be 'True', 'true', '1', or just present)
+        if (pdfParam !== null && (pdfParam.toLowerCase() === 'true' || pdfParam === '1' || pdfParam === '')) {
+            // Wait a bit for all resources to load (images, fonts, etc.)
+            setTimeout(function() {
+                downloadCard().then(function() {
+                    // Close window after PDF is saved
+                    // Use a small delay to ensure PDF download has started
+                    setTimeout(function() {
+                        window.close();
+                    }, 500);
+                }).catch(function(error) {
+                    console.error('Error generating PDF:', error);
+                    // Close window even if there's an error
+                    setTimeout(function() {
+                        window.close();
+                    }, 1000);
+                });
+            }, 1000);
+        }
+    });
+</script>
+
+
+<div class="card-layout">
+
+    {#    <div class="card-menu">#}
+    {#        <ul>#}
+    {#            {% for i in crew_list %}#}
+    {#                <li><a class="{% if i.active %}active{% endif %}" href="{{ i.url }}" rel="noreferrer noopener">{{ i.name }}</a></li>#}
+    {#            {% endfor %}#}
+    {#        </ul>#}
+    {#    </div>#}
+
+    <div class="card-wrapper">
+
+        {#        <a class="link_employee_email" href="{{ employee_url }}" rel="noreferrer noopener">{{ employee_email }}</a>#}
+        <span class="employee_phone">{{ employee_phone }}</span>
+        <span class="employee_email">{{ employee_email }}</span>
+        <span class="employee_status">{{ employee_status }}</span>
+
+        <div class="scale">
+            <input type="range" min="0.5" max="2" step="0.05" value="1.0" oninput="updateScale(this.value)">
+        </div>
+        <div>
+            <button style="background-color: #309bbf1f;border-color: #dfdfdf;border-radius: 0 10px;" class="button_blue" onclick="printPopup()">Print</button>
+            <button style="background-color: #309bbf1f;border-color: #dfdfdf;border-radius: 0 10px;" class="button_blue" onclick="downloadCard()">pdf</button>
+        </div>
+        <div id="print-area" class="print-area">
+            <img class="logo" src="/static/img/logo_optimized_sharper.webp">
+            <span class="fire_red">FIRE</span>
+            <span class="crew_red">CREW</span>
+            <div class="photo_area">
+                {% if pictures %}
+                    {% thumbnail pictures "1540x1540" crop=False upscale=False quality=60 as thumb %}
+                        <img id="image" src="{{ thumb.url }}" alt="Avatar"/>
+                    {% endthumbnail %}
+                    {#<img id="image" src="{{ pictures.url }}">#}
+                {% else %}
+                    <img id="image" src="/static/img/male-avatar-profile-picture.png">
+                {% endif %}
+                {#<img id="image" src="{{ pictures.photo_exchange.url }}">#}
+            </div>
+            <span class="iqc">Incident Qualification Card</span>
+            <span class="name">Name:<span contenteditable="true" spellcheck="false">{{ employee_name }}</span></span>
+            {% for value in rows %}
+                <span class="row{{ forloop.counter }}">{{ value.0 }}<span contenteditable="true" spellcheck="false">{{ value.1 }}</span></span>
+            {% endfor %}
+            {#        <span class="row1">ID#:<span contenteditable="true">ID240056</span></span>#}
+            {#        <span class="row2">WCFT:<span contenteditable="true">5/17/2024</span></span>#}
+            {#        <span class="row3">RT-130:<span contenteditable="true">5/17/2024</span></span>#}
+            {#        <span class="row4">English:<span contenteditable="true">Yes</span></span>#}
+            {#        <span class="row5">Seasons:<span contenteditable="true">1</span></span>#}
+            {#        <span class="row6">Exp. code<span contenteditable="true"></span></span>#}
+
+            <span class="qualificat_head">Qualifications &nbsp;&nbsp;&nbsp;&nbsp; Date Certified</span>
+            {% for value in q_rows %}
+                <span class="q_row{{ forloop.counter }}">{{ value.0 }}<span contenteditable="true" spellcheck="false">{{ value.1 }}</span></span>
+            {% endfor %}
+            {#        <span class="q_row1">FFT2<span contenteditable="true">5/19/2024</span></span>#}
+            {#        <span class="q_row2">Sawyer<span contenteditable="true">8/23/2024</span></span>#}
+            {#        <span class="q_row3">First Aid/CPR<span contenteditable="true">Exp.8/23/2026</span></span>#}
+
+            <img class="signature" src="/static/img/signature/signature 2.jpg">
+            <span class="sig">Signature:</span>
+            <img class="qrcode" src="/static/img/QR.png">
+
+            {#            <span class="company" contenteditable="true" spellcheck="false">Dust Busters Plus LLC</span>#}
+            <!-- Этот спан отображается везде (и в печати, и на экране) -->
+            <span id="company-print-text">{{ selected_company|default:"Dust Busters Plus LLC" }}</span>
+
+            <select class="company-select" onchange="syncCompanyText(this)">
+                {% for name in company_names %}
+                    <option value="{{ name }}" {% if name == selected_company %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+
+
+            <div class="circle {{ color }}" onclick="cycleCircleColor(this)"></div>
+            {#        <div class="circle red" id="circle-red"></div>#}
+            {#        <div class="circle yellow" id="circle-yellow" style="display: none;"></div>#}
+            {#        <div class="circle blue" id="circle-blue" style="display: none;"></div>#}
+        </div>
+
+
+        {#    <select onchange="document.querySelectorAll('.circle').forEach(el => el.style.display = 'none');document.getElementById('circle-' + this.value).style.display = 'block';">#}
+        {#        <option value="red">Red</option>#}
+        {#        <option value="yellow">Yellow</option>#}
+        {#        <option value="blue">Blue</option>#}
+        {#    </select>#}
+    </div>
+</div>

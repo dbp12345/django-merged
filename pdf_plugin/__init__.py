@@ -1,0 +1,1 @@
+# PDF Plugin for Django

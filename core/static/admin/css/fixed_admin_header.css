@@ -1,0 +1,27 @@
+#grp-content {
+    padding-bottom: 60px;
+}
+
+.grp-changelist-results {
+    overflow: auto;
+    max-height: calc(100vh - 285px); /* подбери 225px под свой layout */
+    position: relative;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable; /* помогает выровнять ширины при скролле */
+}
+
+/* sticky header внутри этого контейнера */
+.grp-changelist-results table thead th,
+.grp-changelist-results table thead td {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    background-clip: padding-box;
+}
+
+/* минимальный стиль для самих ячеек */
+.grp-changelist-results table th,
+.grp-changelist-results table td {
+    white-space: nowrap;
+}

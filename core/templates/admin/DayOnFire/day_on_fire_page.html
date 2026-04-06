@@ -1,0 +1,836 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+
+
+    <!-- flatpickr -->
+    {#    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">#}
+    {#    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>#}
+    <link href="{% static 'admin/dayonfire/css/flatpickr.min.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'admin/dayonfire/js/flatpickr.js' %}"></script>
+
+    {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css"/>#}
+    {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>#}
+    <link href="{% static 'admin/dayonfire/css/awesomplete.min.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'admin/dayonfire/js/awesomplete.min.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'employees_table/js/Sortable.min.js' %}"></script>
+
+    <link href="{% static 'admin/dayonfire/css/day_on_fire.css' %}" rel="stylesheet"/>
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const input = document.getElementById("dispatch-autocomplete");
+            const hiddenInput = document.getElementById("dispatch-id");
+
+            // Подгружаем данные из HTML (Django передаёт)
+            const dispatchList = [
+                {% for dispatch in prepared_dispatches %}
+                    {
+                        id: "{{ dispatch.id }}",
+                        label: "{{ dispatch.label|escapejs }}",
+                        value: "{{ dispatch.label|escapejs }}"
+                    },
+                {% endfor %}
+            ];
+
+            // подключаем get параметр
+            const params = new URLSearchParams(window.location.search);
+            const dispatchIdFromUrl = params.get("dispatch_id");
+            if (dispatchIdFromUrl) {
+                const match = dispatchList.find(d => d.id === dispatchIdFromUrl);
+                if (match) {
+                    document.getElementById("dispatch-autocomplete").value = match.label;
+                    document.getElementById("dispatch-id").value = match.id;
+
+                    // Автозагрузка
+                    fetch(`/admin/day-on-fire/service/employees-by-dispatch/${match.id}/`)
+                        .then(resp => resp.json())
+                        .then(fillCrewFromDispatchData);
+                }
+            }
+
+            const awesomplete = new Awesomplete(input, {
+                list: dispatchList,
+                autoFirst: true,
+                minChars: 0,
+                maxItems: 50,
+                replace: function (selected) {
+                    input.value = selected.label;
+                    const match = dispatchList.find(d => d.label === selected.label);
+                    if (match) {
+                        hiddenInput.value = match.id;
+                        fetch(`/admin/day-on-fire/service/employees-by-dispatch/${match.id}/`)
+                            .then(resp => resp.json())
+                            .then(fillCrewFromDispatchData);
+                    }
+                }
+            });
+            // 👇 Показывает список при клике (или фокусе) на инпут
+            input.addEventListener("focus", () => {
+                awesomplete.evaluate();
+            });
+
+            // 🟢 MODAL
+            function showCustomAlert(message, type = "info") {
+                const alertBox = document.getElementById("custom-alert");
+                const overlay = document.getElementById("custom-alert-overlay");
+                const msg = document.getElementById("custom-alert-message");
+                const title = document.getElementById("custom-alert-title");
+
+                const titles = {
+                    success: "✅ Success",
+                    error: "⚠ Submission Error",
+                    info: "ℹ Information"
+                };
+
+                title.textContent = titles[type] || "Notice";
+                msg.textContent = message;
+
+                overlay.style.display = "block";
+                alertBox.style.display = "block";
+
+                function closeAlert() {
+                    alertBox.style.display = "none";
+                    overlay.style.display = "none";
+                    document.removeEventListener("keydown", escHandler);
+                    overlay.removeEventListener("click", closeAlert);
+                }
+
+                function escHandler(e) {
+                    if (e.key === "Escape") closeAlert();
+                }
+
+                document.getElementById("custom-alert-close-btn").onclick = closeAlert;
+                document.addEventListener("keydown", escHandler);
+                overlay.addEventListener("click", closeAlert);
+            }
+
+            document.getElementById("custom-alert-close-btn").addEventListener("click", function () {
+                document.getElementById("custom-alert").style.display = "none";
+            });
+
+            // 🟢 FORM
+            const form = document.getElementById("day-on-fire-form");
+            if (!form) {
+                console.warn("Form not found when trying to attach submit handler");
+                return;
+            }
+
+            form.addEventListener("submit", async function (e) {
+                e.preventDefault();
+
+                console.log("🟢 JS submit intercepted", form);
+                const url = form.action || window.location.href;
+
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(url, {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        let errorMessage = "Unknown error";
+                        try {
+                            const json = await response.json();
+                            errorMessage = json.message || errorMessage;
+                        } catch (parseErr) {
+                            const text = await response.text();
+                            errorMessage = text || errorMessage;
+                        }
+                        throw new Error(errorMessage);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.status === "success") {
+                        showCustomAlert("Form submitted successfully!", "success")
+                        //alert("Form submitted successfully!");
+                        await loadFireRunTable();  // 🔄 обновляем таблицу
+                    } else {
+                        showCustomAlert("Server returned an error: " + (result.message || "Unknown error"), "error")
+                        //alert("Server returned an error: " + (result.message || "Unknown error"));
+                    }
+                } catch (err) {
+                    console.error("Error submitting form:", err);
+                    showCustomAlert("Submission failed. Reason: " + err.message, "error")
+                    {#alert("Submission failed. Reason: " + err.message);#}
+                }
+            });
+
+
+            document.getElementById("fileInput").addEventListener("change", function (event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const preview = document.getElementById("preview");
+                preview.innerHTML = ""; // очистка прошлого
+
+                const reader = new FileReader();
+
+                if (file.type.startsWith("image/")) {
+                    reader.onload = function (e) {
+                        const img = document.createElement("img");
+                        img.src = e.target.result;
+                        img.style.height = "400px";
+                        preview.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                } else if (file.type === "application/pdf") {
+                    const url = URL.createObjectURL(file);
+                    const embed = document.createElement("embed");
+                    embed.src = url;
+                    embed.type = "application/pdf";
+                    embed.width = "1200";
+                    embed.height = "400";
+                    preview.appendChild(embed);
+                } else {
+                    preview.textContent = "Preview not available for this file type.";
+                }
+            });
+
+        });
+
+
+    </script>
+{% endblock %}
+
+{% block content %}
+    <form id="day-on-fire-form" method="post" action="" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="grid">
+            {#            <label for="fire">Fire</label>#}
+            <input id="fire" name="fire" type="text" autocomplete="off" readonly/>
+            <input id="fire_id" name="fire_id" type="hidden" autocomplete="off" readonly/>
+            <br>
+            {#            <label for="dispatch-select">Dispatch & Fire</label>#}
+            <input id="dispatch-autocomplete" class="awesomplete" type="text" placeholder="Search dispatch..." autocomplete="off">
+            <input type="hidden" name="dispatch" id="dispatch-id">
+            <br>
+
+            <label for="incident_name">Fire name</label>
+            <input id="incident_name" name="incident_name" type="text" autocomplete="off"/>
+
+            <label for="fire_number">Fire number</label>
+            <input id="fire_number" name="fire_number" type="text" autocomplete="off"/>
+
+            <label for="dispatch_ec_number">EC number</label>
+            <input id="dispatch_ec_number" name="dispatch_ec_number" type="text" autocomplete="off"/>
+
+            <br>
+
+            <label for="incident_type">Fire type</label>
+            <input id="incident_type" name="incident_type" type="text" autocomplete="off"/>
+
+            <label for="agency">Fire agency</label>
+            <input id="agency" name="agency" type="text" autocomplete="off"/>
+
+            <label for="state">Fire state</label>
+            <input id="state" name="state" type="text" autocomplete="off"/>
+
+            <label for="activity_code">Activity code</label>
+            <input id="activity_code" name="activity_code" type="text" autocomplete="off"/>
+
+            <label for="fuel_type">Fuel type</label>
+            <input id="fuel_type" name="fuel_type" type="text" autocomplete="off"/>
+
+            <label for="fire_size">Fire size</label>
+            <input id="fire_size" name="fire_size" type="text" autocomplete="off"/>
+
+
+            <br>
+            <hr>
+
+
+            <label for="date">Date</label>
+            <input id="date" name="date" type="text" autocomplete="off"/>
+
+            <br>
+
+            <group>
+                <label for="clock_in_1">Clock In 1</label>
+                <input id="clock_in_1" name="clock_in_1" type="text" autocomplete="off"/>
+
+
+                <label for="clock_out_1">Clock Out 1</label>
+                <input id="clock_out_1" name="clock_out_1" type="text" autocomplete="off"/>
+            </group>
+            <br>
+
+            <group>
+                <label for="clock_in_2">Clock In 2</label>
+                <input id="clock_in_2" name="clock_in_2" type="text" autocomplete="off"/>
+
+
+                <label for="clock_out_2">Clock Out 2</label>
+                <input id="clock_out_2" name="clock_out_2" type="text" autocomplete="off"/>
+            </group>
+
+            {#            <label for="fake"></label>#}
+            {#            <input type="text" name="fake" value="">#}
+            <label for="hours_per_day">Hours per day</label>
+            <input id="hours_per_day" type="text" name="hours_per_day" placeholder="" value="">
+            <br>
+            <br>
+
+
+            <input id="hotline_in_remarks" name="hotline_in_remarks" type="checkbox"/>
+            <label for="hotline_in_remarks">Hotline in remarks</label>
+            <br>
+            <input id="operational_periods" name="operational_periods" type="checkbox"/>
+            <label for="operational_periods">Operational periods</label>
+
+            {#            <label for="reliability_leaving">Fire reliability_leaving</label>#}
+            {#            <input id="reliability_leaving" name="reliability_leaving" type="text" autocomplete="off"/>#}
+
+            {#            <label for="Hotline">Hotline in Remarks</label>#}
+            {#            <input id="Hotline" name="Hotline" type="text" autocomplete="off"/>#}
+            {##}
+            {##}
+            {#            <label for="rating">Rating</label>#}
+            {#            <input id="rating" name="rating" type="text" autocomplete="off"/>#}
+            {##}
+            {#            <label for="ranking">Ranking</label>#}
+            {#            <input id="ranking" name="ranking" type="text" autocomplete="off"/>#}
+            <br>
+            <br>
+
+            <div id="preview"></div>
+            <div>
+                <button type="button" id="clearFile">🧹</button>
+                <input class="document" name="document" type="file" id="fileInput" accept="image/*,.pdf"/>
+            </div>
+
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <div id="crew-container"></div>
+
+        <div class="add_crew_member" onclick="addCrew()">+Add Crew Member</div>
+        <button type="submit">Submit</button>
+    </form>
+
+    <template id="crew-template">
+        <div class="crew-row">
+            <span class="drag-handle" style="cursor: grab; padding:0 5px;">⇅</span>
+            <input type="hidden" name="employee_id[]" value="">
+            <input class="employee-autocomplete" type="text" name="employee_name[]" placeholder="Search employee..." value="">
+            <select name="job_title[]">
+                <option value=""></option>
+                {% for job_title in job_title_list %}
+                    <option value="{{ job_title.0 }}">{{ job_title.1 }}</option>
+                {% endfor %}
+            </select>
+            <input name="date[]" placeholder="Date" value="" autocomplete="off">
+            <input name="clock_in_1[]" placeholder="Clock in 1" value="" autocomplete="off">
+            <input name="clock_out_1[]" placeholder="Clock out 1" value="" autocomplete="off">
+            <input name="clock_in_2[]" placeholder="Clock in 2" value="" autocomplete="off">
+            <input name="clock_out_2[]" placeholder="Clock out 2" value="" autocomplete="off">
+            <input name="hours_per_day[]" placeholder="Hours per day" value="" autocomplete="off">
+            <span class="remove-btn" onclick="this.parentElement.remove()">✕</span>
+        </div>
+    </template>
+
+
+    {#    TABLE#}
+    <table id="day_on_fire-table">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+
+    {#    MODAL#}
+    <div id="custom-alert-overlay"
+         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); pointer-events: all; z-index:9998;"></div>
+    <div id="custom-alert"
+         style="display:none; position:fixed; top:30%; left:50%; transform:translateX(-50%); z-index:9999; background:#fff; color:#333; border:1px solid #ccc; border-radius:6px; width:360px; box-shadow:0 2px 10px rgba(0,0,0,0.3); font-family:sans-serif;">
+        <div id="custom-alert-title"
+             style="padding:10px 15px; font-weight:bold; background:#407588; color:#fff; border-radius:6px 6px 0 0;">Notice
+        </div>
+        <div id="custom-alert-message" style="padding:15px; font-size:14px;"></div>
+        <div style="text-align:right; padding:10px 15px;">
+            <button id="custom-alert-close-btn" style="padding:5px 12px; background:#407588; color:#fff; border:none; border-radius:4px; cursor:pointer;">OK</button>
+        </div>
+    </div>
+
+
+    <script>
+        flatpickr("#date", {
+            dateFormat: "m/d/Y",
+            defaultDate: new Date(),
+            allowInput: true,
+            onChange: function (selectedDates, dateStr) {
+                document.querySelectorAll("input[name='date[]']").forEach(input => input.value = dateStr);
+            }
+        });
+
+        function initTimePicker(selector, syncCallback) {
+            flatpickr(selector, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                defaultDate: "00:00",
+                time_24hr: true,
+                allowInput: false,
+                onChange: syncCallback
+            });
+        }
+
+        function calculateHoursFromValues(clockIn1, clockOut1, clockIn2, clockOut2) {
+            const parse = v => {
+                if (!v) return null;
+                const parts = v.split(":");
+                return parts.length === 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : null;
+            };
+
+            const in1 = parse(clockIn1);
+            const out1 = parse(clockOut1);
+            const in2 = parse(clockIn2);
+            const out2 = parse(clockOut2);
+
+            let totalMinutes = 0;
+            if (in1 !== null && out1 !== null && out1 >= in1) totalMinutes += out1 - in1;
+            if (in2 !== null && out2 !== null && out2 >= in2) totalMinutes += out2 - in2;
+
+            return (totalMinutes / 60).toFixed(2);
+        }
+
+        function calculateHours() {
+            const val = calculateHoursFromValues(
+                document.getElementById("clock_in_1").value,
+                document.getElementById("clock_out_1").value,
+                document.getElementById("clock_in_2").value,
+                document.getElementById("clock_out_2").value
+            );
+            document.getElementById("hours_per_day").value = val;
+            syncCrewHours(val);
+        }
+
+        function syncTimeFields(id) {
+            const val = document.getElementById(id).value;
+            const fieldName = id + "[]"; // например "clock_in_1[]"
+            document.querySelectorAll(`input[name='${fieldName}']`).forEach(input => {
+                input.value = val;
+            });
+        }
+
+
+        initTimePicker("#clock_in_1", () => {
+            calculateHours();
+            syncTimeFields("clock_in_1");
+        });
+
+        initTimePicker("#clock_out_1", () => {
+            calculateHours();
+            syncTimeFields("clock_out_1");
+        });
+
+        initTimePicker("#clock_in_2", () => {
+            calculateHours();
+            syncTimeFields("clock_in_2");
+        });
+
+        initTimePicker("#clock_out_2", () => {
+            calculateHours();
+            syncTimeFields("clock_out_2");
+        });
+
+        ["clock_in_1", "clock_out_1", "clock_in_2", "clock_out_2"].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener("input", calculateHours);
+            el.addEventListener("blur", calculateHours);
+        });
+
+        calculateHours();
+
+        function syncCrewHours(val) {
+            document.querySelectorAll(".crew-row input[name='hours_per_day[]']").forEach(input => {
+                input.value = val;
+            });
+        }
+
+        document.getElementById("date").addEventListener("input", function () {
+            const val = this.value;
+            document.querySelectorAll("input[name='date[]']").forEach(input => {
+                input.value = val;
+            });
+        });
+
+        document.getElementById("hours_per_day").addEventListener("input", function () {
+            syncCrewHours(this.value);
+        });
+
+        function getMasterDate() {
+            return (document.getElementById("date").value || "").trim();
+        }
+
+        function applyCrewDatePickers(container) {
+            const masterDate = getMasterDate();
+
+            // Init date field(s)
+            container.querySelectorAll("input[name='date[]']").forEach((input) => {
+                // Prefer: existing value set by caller -> master date -> today
+                const initial = (input.value && input.value.trim())
+                    || masterDate
+                    || flatpickr.formatDate(new Date(), "m/d/Y");
+
+                flatpickr(input, {
+                    dateFormat: "m/d/Y",
+                    defaultDate: initial,
+                    allowInput: true
+                });
+
+                // NOTE: do NOT overwrite input.value here
+                // (this was the root cause — it forced "today" every time)
+            });
+
+            // Init time fields
+            container.querySelectorAll(
+                "input[name='clock_in_1[]'], input[name='clock_out_1[]'], input[name='clock_in_2[]'], input[name='clock_out_2[]']"
+            ).forEach((input) => {
+                flatpickr(input, {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "H:i",
+                    time_24hr: true,
+                    allowInput: false,
+                    onChange() {
+                        const row = input.closest(".crew-row");
+                        const val = calculateHoursFromValues(
+                            row.querySelector("input[name='clock_in_1[]']").value,
+                            row.querySelector("input[name='clock_out_1[]']").value,
+                            row.querySelector("input[name='clock_in_2[]']").value,
+                            row.querySelector("input[name='clock_out_2[]']").value
+                        );
+                        row.querySelector("input[name='hours_per_day[]']").value = val;
+                    }
+                });
+            });
+        }
+
+
+    </script>
+
+    <script>
+        // Flat-style добавление строки
+        function addCrew() {
+            const template = document.getElementById("crew-template").content.cloneNode(true);
+            const newRow = template.querySelector(".crew-row");
+
+            newRow.querySelector("input[name='date[]']").value = document.getElementById("date").value;
+            newRow.querySelector("input[name='hours_per_day[]']").value = document.getElementById("hours_per_day").value;
+            newRow.querySelector("input[name='clock_in_1[]']").value = document.getElementById("clock_in_1").value;
+            newRow.querySelector("input[name='clock_out_1[]']").value = document.getElementById("clock_out_1").value;
+            newRow.querySelector("input[name='clock_in_2[]']").value = document.getElementById("clock_in_2").value;
+            newRow.querySelector("input[name='clock_out_2[]']").value = document.getElementById("clock_out_2").value;
+
+            applyCrewDatePickers(newRow);
+            document.getElementById("crew-container").appendChild(newRow);
+
+            newRow.querySelectorAll(".employee-autocomplete").forEach(function (inputEl) {
+                const hiddenInput = newRow.querySelector("input[name='employee_id[]']");
+                let currentList = [];
+
+                //const awesomplete = new Awesomplete(inputEl, {
+                //    minChars: 1,
+                //    autoFirst: true,
+                //    maxItems: 25,
+                //    replace: function (text) {
+                //        inputEl.value = text.value;
+                //
+                //        const matched = currentList.find(item => item.value === text.value && item.label === text.label);
+                //        if (matched && hiddenInput) {
+                //            hiddenInput.value = matched.id;
+                //        } else if (hiddenInput) {
+                //            hiddenInput.value = "";
+                //        }
+                //    }
+                //});
+
+                const awesomplete = new Awesomplete(inputEl, {
+                    minChars: 1,
+                    autoFirst: true,
+                    maxItems: 25,
+                    // Отключаем клиентскую фильтрацию — показываем ровно то, что прислал сервер
+                    filter: function () {
+                        return true;
+                    },
+                    // Отключаем сортировку, чтобы сохранить порядок от сервера
+                    sort: false,
+
+                    // Как рендерить один элемент (используем label для отображения)
+                    item: function (item, input) {
+                        // item.label — строка, которую пришёл сервер
+                        return Awesomplete.ITEM(item.label, input);
+                    },
+
+                    // Что делать при выборе
+                    replace: function (item) {
+                        // item — объект из списка (тот самый {id,label,value})
+                        inputEl.value = item.value;
+
+                        const matched = currentList.find(it => String(it.value) === String(item.value) && it.label === item.label);
+                        if (matched && hiddenInput) {
+                            hiddenInput.value = matched.id;
+                        } else if (hiddenInput) {
+                            hiddenInput.value = "";
+                        }
+                    },
+
+                    // Если ты присылаешь объект, data() позволяет Awesomplete "понимать" объект
+                    data: function (item, input) {
+                        return item;
+                    }
+                });
+
+                inputEl.addEventListener("input", function () {
+                    const query = inputEl.value.trim();
+                    if (!query) return;
+
+                    fetch(`/admin/day-on-fire/service/search-employees?q=${encodeURIComponent(query)}`)
+                        .then(resp => resp.json())
+                        .then(data => {
+                            currentList = data;
+                            awesomplete.list = data;
+                        });
+                });
+            });
+        }
+
+
+        function fillCrewFromDispatchData(data) {
+            const container = document.getElementById("crew-container");
+            container.innerHTML = "";
+
+            data.emp_data.forEach(member => {
+                const row = document.createElement("div");
+                row.classList.add("crew-row");
+
+                const memberJobTitle = member.job_title || "";
+
+                let optionsHtml = '<option value=""></option>';
+                {% for job_title in job_title_list %}
+                    optionsHtml += `<option value="{{ job_title.0 }}">{{ job_title.1 }}</option>`;
+                {% endfor %}
+
+                row.innerHTML = `
+            <span class="drag-handle" style="cursor: grab; padding:0 5px;">⇅</span>
+            <input name="employee_id[]" type="hidden" value="${member.id || ""}" />
+            <input name="employee_name[]" type="text" placeholder="Name" value="${member.name || ""}" readonly />
+            <select name="job_title[]" title="${memberJobTitle}" data-jt="${memberJobTitle}">
+                ${optionsHtml}
+            </select>
+            <input name="date[]" placeholder="Date" value="${document.getElementById("date").value}" autocomplete="off" />
+            <input name="clock_in_1[]" placeholder="Clock in 1" value="${document.getElementById("clock_in_1").value}" autocomplete="off" />
+            <input name="clock_out_1[]" placeholder="Clock out 1" value="${document.getElementById("clock_out_1").value}" autocomplete="off" />
+            <input name="clock_in_2[]" placeholder="Clock in 2" value="${document.getElementById("clock_in_2").value}" autocomplete="off" />
+            <input name="clock_out_2[]" placeholder="Clock out 2" value="${document.getElementById("clock_out_2").value}" autocomplete="off" />
+            <input name="hours_per_day[]" placeholder="Hours per day" value="${document.getElementById("hours_per_day").value}" autocomplete="off" />
+            <span class="remove-btn" onclick="this.parentElement.remove()">✕</span>
+        `;
+
+                const select = row.querySelector("select[name='job_title[]']");
+                const jt = select.dataset.jt;
+                if (jt) {
+                    const match = Array.from(select.options).find(opt => opt.value && jt.includes(opt.value));
+                    if (match) match.selected = true;
+                }
+
+                container.appendChild(row);
+                applyCrewDatePickers(row);
+            });
+
+            const fire = data.fire_data;
+            document.getElementById("fire").value = fire.fire;
+            document.getElementById("fire_id").value = fire.fire_id;
+            document.getElementById("incident_name").value = fire.incident_name || "";
+            document.getElementById("fire_number").value = fire.fire_number || "";
+            document.getElementById("incident_type").value = fire.incident_type || "";
+            document.getElementById("dispatch_ec_number").value = fire.dispatch_ec_number || "";
+            document.getElementById("agency").value = fire.agency || "";
+            document.getElementById("state").value = fire.state || "";
+            document.getElementById("activity_code").value = fire.activity_code || "";
+            document.getElementById("fuel_type").value = fire.fuel_type || "";
+            document.getElementById("fire_size").value = fire.fire_size || "";
+            // document.getElementById("reliability_leaving").value = fire.reliability_leaving || "";
+
+            if (window.__restoreCrewOrder) window.__restoreCrewOrder();
+        }
+
+        // TABLE
+        function getCSRFToken() {
+            const name = "csrftoken";
+            const cookies = document.cookie.split("; ");
+            for (const cookie of cookies) {
+                if (cookie.startsWith(name + "=")) {
+                    return decodeURIComponent(cookie.split("=")[1]);
+                }
+            }
+            return "";
+        }
+
+        function removeDayOnFire(id, rowEl) {
+            fetch(`/admin/day-on-fire/service/delete/${id}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken(),
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(resp => resp.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        rowEl.remove();
+                    } else {
+                        alert("Delete failed: " + (data.message || "Unknown error"));
+                    }
+                })
+                .catch(error => console.error("Error deleting DayOnFire:", error));
+        }
+
+
+        async function loadFireRunTable() {
+            try {
+                const response = await fetch("/admin/day-on-fire/service/table");
+                if (!response.ok) throw new Error("Failed to fetch");
+
+                const data = await response.json();
+
+                const table = document.getElementById("day_on_fire-table");
+                const thead = table.querySelector("thead");
+                const tbody = table.querySelector("tbody");
+
+                // Очистка
+                thead.innerHTML = "";
+                tbody.innerHTML = "";
+
+                // Рендер заголовков
+// Рендер заголовков
+                const headerRow = document.createElement("tr");
+                for (const col of data.columns) {
+                    const th = document.createElement("th");
+                    th.textContent = col.label;
+                    headerRow.appendChild(th);
+                }
+// Добавляем колонку для действия (кнопка ✕)
+                const actionTh = document.createElement("th");
+                actionTh.textContent = "";  // Или "✕", если хочешь иконку
+                headerRow.appendChild(actionTh);
+                thead.appendChild(headerRow);
+
+                // Рендер строк
+                for (const row of data.rows) {
+                    const tr = document.createElement("tr");
+
+                    // Основные колонки
+                    for (const col of data.columns) {
+                        const td = document.createElement("td");
+                        td.textContent = row[col.key] || "";
+                        tr.appendChild(td);
+                    }
+
+                    // Колонка для кнопки ✕
+                    const actionTd = document.createElement("td");
+                    const btn = document.createElement("span");
+                    btn.textContent = "✕";
+                    btn.className = "remove-btn";
+                    btn.addEventListener("click", function () {
+                        if (confirm("Delete this DayOnFire entry?")) {
+                            removeDayOnFire(row.id, tr);
+                        }
+                    });
+                    actionTd.appendChild(btn);
+                    tr.appendChild(actionTd);
+
+                    tbody.appendChild(tr);
+                }
+            } catch (error) {
+                console.error("Table loading error:", error);
+            }
+        }
+
+        // Запуск при загрузке страницы
+        document.addEventListener("DOMContentLoaded", loadFireRunTable);
+
+        document.getElementById("clearFile").addEventListener("click", function () {
+            document.querySelector(".document").value = "";
+            document.getElementById("preview").innerHTML = "";
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const container = document.getElementById("crew-container");
+            const storageKey = "dayonfire_crew_order"; // CHANGED: localStorage key
+
+            function getRowId(row) {
+                // CHANGED: use employee_id as stable key; skip empty ids
+                const inp = row.querySelector("input[name='employee_id[]']");
+                return inp ? (inp.value || "") : "";
+            }
+
+            function saveOrder() {
+                const ids = Array.from(container.children)
+                    .map(getRowId)
+                    .filter(id => id); // only non-empty
+                localStorage.setItem(storageKey, JSON.stringify(ids));
+            }
+
+            function restoreOrder() {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) return;
+                let ids;
+                try {
+                    ids = JSON.parse(raw) || [];
+                } catch {
+                    return;
+                }
+                if (!Array.isArray(ids) || !ids.length) return;
+
+                const rows = Array.from(container.children);
+                ids.forEach(id => {
+                    const row = rows.find(r => getRowId(r) === id);
+                    if (row) container.appendChild(row);
+                });
+            }
+
+            // CHANGED: init Sortable with a handle and save on drop
+            new Sortable(container, {
+                handle: ".drag-handle",
+                animation: 150,
+                onEnd: saveOrder
+            });
+
+            // CHANGED: add reset button right above the container
+            const resetBtn = document.createElement("button");
+            resetBtn.type = "button";
+            resetBtn.textContent = "Reset order";
+            resetBtn.style.margin = "6px 0";
+            resetBtn.style.display = "none";
+            resetBtn.style.background = "red";
+            resetBtn.addEventListener("click", () => {
+                localStorage.removeItem(storageKey);
+                location.reload();
+            });
+            container.parentElement.insertBefore(resetBtn, container);
+
+            // Делаем доступным из других мест (после автозаполнения экипажа)
+            window.__restoreCrewOrder = restoreOrder;
+        });
+    </script>
+
+
+{% endblock %}

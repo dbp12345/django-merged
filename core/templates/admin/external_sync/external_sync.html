@@ -1,0 +1,123 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+
+
+<style>
+    .sync-form {
+        max-width: 700px;
+        padding: 20px;
+        font-family: sans-serif;
+    }
+
+    .sync-form h3 {
+        margin: 15px 0 8px;
+        font-size: 16px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #ccc;
+        color: #0b75c9;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    }
+
+    .sync-form select {
+        width: 100%;
+        height: auto;
+        padding: 6px;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 4px 12px;
+        margin-top: 10px;
+        font-size: 13px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        padding: 4px 6px;
+        border-radius: 4px;
+        transition: background 0.2s;
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        background: #f0f0f0;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .sync-form .submit-btn {
+        width: auto;
+        height: auto;
+        margin-top: 20px;
+        padding: 8px 16px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .sync-form .submit-btn:hover {
+        background: #0056b3;
+    }
+</style>
+
+<form class="sync-form" method="post">
+    {% csrf_token %}
+
+    <h3>Direction</h3>
+    <select class="direction" name="direction">
+        <option value="0">-</option>
+{#        <option value="exc_to_privser">Exchange to Privser</option>#}
+{#        <option value="django_to_exc">Django to Exchange</option>#}
+        <option value="django_to_privser">Django to Privser</option>
+    </select>
+
+    <h3>Employee Filter</h3>
+    <select class="employee-filter" name="employee_filter">
+        <option value="0">-</option>
+        {% for filter in filters %}
+            <option value="{{ filter.id }}">{{ filter.name }}</option>
+        {% endfor %}
+    </select>
+
+    <h3>Fields to Sync</h3>
+    <div class="checkbox-grid">
+        {% for custom_field in custom_fields %}
+            <label class="checkbox-item">
+                <input type="checkbox" name="fields" value="{{ custom_field.id }}">
+                {{ custom_field.privser_name }} = {{ custom_field.exchange_property.property_name }}
+            </label>
+        {% endfor %}
+    </div>
+
+    <button type="submit" class="submit-btn">Submit</button>
+</form>
+
+
+
+
+{% endblock %}

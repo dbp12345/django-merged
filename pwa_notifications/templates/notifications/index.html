@@ -1,0 +1,179 @@
+{% extends "notifications/base.html" %}
+{% load webpush_notifications %}
+{% load static %}
+
+{% block title %}Help Tickets{% endblock %}
+
+{% block user %}
+    {% if user %}<a href="{% url 'notifications_index' %}">{{ user.username }}</a>{% endif %}
+{% endblock %}
+
+{% block head %}
+<style>
+    .tickets-list {
+        margin-top: 20px;
+        text-align: left;
+    }
+    
+    .tickets-list h3 {
+        color: #fff;
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        text-align: center;
+        text-decoration: underline;
+    }
+    
+    .ticket-item {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        transition: background 0.3s;
+    }
+    
+    .ticket-item:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .ticket-item a {
+        color: #fff;
+        text-decoration: none;
+        display: block;
+    }
+    
+    .ticket-item a:hover {
+        text-decoration: underline;
+    }
+    
+    .ticket-title {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 5px;
+    }
+    
+    .ticket-meta {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .ticket-priority {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    
+    .priority-10, .priority-09, .priority-08, .priority-07, .priority-06 {
+        background: #ff4444;
+        color: #fff;
+    }
+    
+    .priority-05, .priority-04, .priority-03 {
+        background: #ff9800;
+        color: #fff;
+    }
+    
+    .priority-02, .priority-01 {
+        background: #4CAF50;
+        color: #fff;
+    }
+    
+    .priority-\- {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+    }
+    
+    .ticket-status {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.2);
+        position: absolute;
+        right: 150px;
+    
+    }
+    
+    .no-tickets {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        padding: 20px;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block hero %}
+    <section class="content-bg">
+        <div class="main-container">
+            {% if user.is_authenticated and tickets %}
+                <div class="tickets-list">
+                    <h3>My Help Tickets</h3>
+                    {% for ticket in tickets %}
+                        <div class="ticket-item">
+                            <a href="{% url 'admin:core_helpticket_change' ticket.pk %}" class="external-link" data-external="true">
+                                <div class="ticket-title">{{ ticket.title }}</div>
+                                <div class="ticket-meta">
+                                    <span class="ticket-priority priority-{{ ticket.priority }}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                    <span class="ticket-status">{{ ticket.get_status_display }}</span>
+                                    {% if ticket.updated_at %}
+                                        <span>{{ ticket.updated_at|date:"M d, Y" }}</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif user.is_authenticated %}
+                <div class="no-tickets">
+                    <p>No open tickets assigned to you</p>
+                </div>
+            {% endif %}
+
+            <div style="padding: 20px; text-align: center;">
+                {% if user.is_authenticated %}
+                    {% webpush_button %}
+                {% else %}
+                    <p>Please <a href="{% url 'notifications_login' %}">login</a> to enable push notifications</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Open admin links - replace current window to open in browser instead of PWA
+    document.addEventListener('DOMContentLoaded', function() {
+        const externalLinks = document.querySelectorAll('a.external-link[data-external="true"]');
+        
+        externalLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href');
+                
+                // Check if we're in PWA (standalone mode)
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                                     (window.navigator.standalone === true);
+                
+                if (isStandalone) {
+                    // In PWA: replace current window to open in browser
+                    // This will exit PWA and open admin in system browser
+                    window.location.href = url;
+                } else {
+                    // Not in PWA: open in new tab
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

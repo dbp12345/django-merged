@@ -1,0 +1,16 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block content %}
+    <ul>
+        {% for title, url in urls.items %}
+            <li><a style="font-weight: {% if title == page.title %}bold{% endif %};" href="{{ url }}">{{ title }}</a></li>
+        {% endfor %}
+    </ul>
+   {{ page.formatted_markdown|safe }}
+{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+{% endblock %}

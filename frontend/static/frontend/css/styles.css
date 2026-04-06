@@ -1,0 +1,153 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #f5f5f5;
+    color: #fff;
+}
+
+.hero-section {
+    background: url("/static/frontend/img/BURN_OPS smaller version_low.webp") no-repeat center center/cover;
+    height: 100vh;
+    position: relative;
+}
+
+.overlay {
+    background: rgba(0, 0, 0, 0.5);
+    height: 100%;
+    padding: 0 2rem;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: normal;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5vh 0;
+    height: 7vh;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+    text-decoration: underline;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-links a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.hero-content {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    padding-bottom: 5rem;
+}
+
+.hero-content h1 {
+    font-size: 2.8rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.btn {
+    background: #ff3b3b;
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: #e02424;
+}
+
+.error {
+    color: #c62828;
+    font-weight: bold;
+}
+
+.content-bg {
+    background: none;
+    position: relative;
+    /*min-height: 88vh;*/
+    height: auto;
+}
+
+.content-bg::after {
+    /*height: inherit;*/
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin-bottom: 20px;
+    background: rgba(245, 243, 240, 0.10); /* едва заметное высветление */
+    border-radius: 12px;
+    border: 3px solid rgba(255, 87, 34, 0.35); /* soft-orange frame */
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3); /* глубокая тень */
+    z-index: 1;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.main-container {
+    position: relative;
+    z-index: 2;
+    max-width: 400px;
+    margin: auto;
+    padding-top: 10vh;
+    padding-bottom: 5vh;
+    min-height: 74vh;
+    text-align: center;
+}
+
+.main-container input {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+}
+
+.main-container button {
+    background: #e53935;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 1rem;
+    font-weight: bold;
+}
+
+.main-container button:hover {
+    background: #c62828;
+}
+
+.main-container a {
+    color: #fff;
+    display: block;
+    margin-top: 1rem;
+    text-decoration: underline;
+}

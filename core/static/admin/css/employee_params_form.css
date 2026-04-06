@@ -1,0 +1,92 @@
+.employee-parameters-container {
+    display: grid;
+    grid-template-columns: auto 1fr; /* 250px меню + остальное под контент */
+    /*height: 100vh; !* на весь экран *!*/
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 16px;
+    background-color: #f9f9f9;
+    /*display: flex;*/
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.employee-parameters-container .exhibit-n-link {
+    display: block;
+    margin-top: -10px;
+    color: #309bbf;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 70px;
+    transition: color 0.3s ease;
+    &:hover {
+        color: #207799;
+    }
+}
+
+#employee-parameters-form {
+    display: flex;
+    min-width: 600px;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 80px 12px 0;
+    border-right: 1px solid #ccc;
+}
+
+#employee-parameters-form table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#employee-parameters-form table td {
+    border: 1px solid #5d5d5d;
+    padding: 0 20px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+#employee-parameters-form table td:last-child {
+    padding: 0;
+}
+
+#employee-parameters-form input[type=text],
+#employee-parameters-form input.vDateField {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+#employee-parameters-form input[type=checkbox] {
+    margin: 0 0 0 8px;
+}
+
+
+#employee-parameters-form input {
+    width: auto;
+    font-size: 12px;
+    height: 22px;
+    padding: 0 0 0 8px;
+    margin: 0;
+    border: none;
+    background: none;
+}
+
+#employee-parameters-form table td * {
+    outline: none !important;
+}
+
+#employee-parameters-form .datetimeshortcuts {
+    padding-right: 18px;
+    display: none;
+}
+
+#employee-parameters-form .datetimeshortcuts a {
+    display: none;
+}
+
+.grp-td.rating input,
+.grp-td.ranking input {
+    width: 10ch;
+}

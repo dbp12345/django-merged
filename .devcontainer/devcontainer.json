@@ -1,0 +1,77 @@
+{
+  "name": "Django Development",
+  "dockerComposeFile": [
+    "../docker/docker-compose.yml",
+    "../docker/docker-compose.dev.yml"
+  ],
+  "service": "web",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  
+  "features": {},
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.flake8",
+        "batisteo.vscode-django",
+        "wholroyd.jinja",
+        "ecmel.vscode-html-css",
+        "pranaygp.vscode-css-peek",
+        "zignd.html-css-class-completion",
+        "ms-azuretools.vscode-docker",
+        "ms-azuretools.vscode-containers",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql",
+        "mtxr.sqltools-driver-pg",
+        "cweijan.vscode-mysql-client2",
+        "cweijan.dbclient-jdbc",
+        "charliermarsh.ruff",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-json",
+        "davidanson.vscode-markdownlint",
+        "alefragnani.bookmarks",
+        "jbro.vscode-default-keybindings"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.analysis.extraPaths": [
+          "/app"
+        ],
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.diagnosticMode": "workspace",
+        "python.linting.enabled": true,
+        "python.formatting.provider": "black",
+        "files.associations": {
+          "**/*.html": "django-html",
+          "**/templates/**/*.html": "django-html"
+        },
+        "emmet.includeLanguages": {
+          "django-html": "html"
+        }
+      }
+    }
+  },
+  
+  "forwardPorts": [8000, 3307, 6379],
+  "portsAttributes": {
+    "8000": {
+      "label": "Django",
+      "onAutoForward": "notify"
+    }
+  },
+  
+  "postCreateCommand": "echo 'Container ready!'",
+  
+  "remoteUser": "root"
+}
+
+

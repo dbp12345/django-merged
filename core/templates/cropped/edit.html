@@ -1,0 +1,86 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static '/admin/css/buttons.css' %}">
+
+{#    <link href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet">#}
+{#    <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>#}
+
+    <link href="{% static 'cropper/cropper.min.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'cropper/cropper.min.js' %}"></script>
+
+
+    <script>
+        let cropper;
+
+        window.addEventListener('DOMContentLoaded', function () {
+            const image = document.querySelector('#image');
+            cropper = new Cropper(image, {
+                minContainerWidth: 244,
+                minContainerHeight: 280,
+                viewMode: 3,
+                dragMode: 'move',
+                autoCropArea: 1,
+                restore: false,
+                modal: false,
+                guides: false,
+                responsive: false,
+                highlight: false,
+                cropBoxMovable: false,
+                cropBoxResizable: false,
+                toggleDragModeOnDblclick: false,
+            });
+
+
+            document.getElementById('save-btn').addEventListener('click', function () {
+                const canvas = cropper.getCroppedCanvas(
+                    //{
+                    //    width: 300,
+                    //    height: 350,
+                    //}
+                );
+
+                canvas.toBlob(function (blob) {
+                    const formData = new FormData();
+                    formData.append('cropped_image', blob);
+                    formData.append('id', new URLSearchParams(window.location.search).get('id'));
+
+                    fetch(window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                    }).then(response => {
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                        } else if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert("Failed to save");
+                        }
+                    });
+                });
+            });
+        });
+
+    </script>
+{% endblock %}
+
+{% block content %}
+
+    {% if pictures %}
+        <div style="height: 280px; width: 244px">
+            <img id="image" src="{{ pictures.url }}">
+        </div>
+        <button id="save-btn" class="button_blue">Save</button>
+    {% else %}
+        <h4>The image is already in the system</h4>
+    {% endif %}
+
+{% endblock %}

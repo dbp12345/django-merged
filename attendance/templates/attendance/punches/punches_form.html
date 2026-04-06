@@ -1,0 +1,117 @@
+{% extends "attendance/base.html" %}
+{% load static %}
+
+{% block head %}
+
+    <style>
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+
+        .no_result {
+            padding: 8px 12px;
+            color: #999;
+            font-style: italic;
+            background-color: #f8f9fa;
+            border-top: 1px solid #ddd;
+        }
+
+        .autoComplete_wrapper {
+            width: 100%;
+        }
+
+        .autoComplete_wrapper > input {
+            display: block;
+            width: 100%;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ffffff80;
+            height: 47px;
+            color: #0c0c0c;
+        }
+
+        .autoComplete_wrapper > input:focus {
+            color: black;
+            border: .06rem solid rgb(57, 22, 15);
+        }
+
+        .autoComplete_wrapper > input {
+            background-position: left 0.5rem top .7rem;
+            padding-left: 1rem;
+            padding-right: 0.5rem;
+        {#padding-left: 2.2rem;#} background-image: none !important;
+        }
+
+        .autoComplete_wrapper > input {
+            color: black !important;
+            border: 1px solid #ccc !important;
+        }
+
+        .autoComplete_wrapper > input::placeholder {
+            color: rgba(57, 22, 15, 0.5) !important;
+        }
+
+        .autoComplete_wrapper > ul > li mark {
+            color: inherit !important;
+            font-weight: normal;
+        }
+
+        .autoComplete_wrapper > ul > li:hover,
+        .autoComplete_wrapper > ul > li[aria-selected="true"] {
+            background-color: rgba(57, 22, 15, 0.1) !important;
+        }
+    </style>
+{% endblock %}
+{% block title %}Attendance{% endblock %}
+{% block user %}
+    {% if user %}<a href="{% url 'pwa_punches_form' %}">{{ user.username }}</a>{% endif %}
+{% endblock %}
+
+{% block hero %}
+    <div id="overlay" style="display:none;"></div>
+    <section class="content-bg">
+        <div class="main-container">
+            <h2 style="text-decoration: underline;margin-top: 15px;margin-bottom: 5px;">Attendance</h2>
+
+            <form method="post" id="punch-form">
+                {% csrf_token %}
+                <div class="btn-row">
+                    {% comment %} Показываем одну кнопку: если последний event == CLOCK_IN => показываем CLOCK OUT {% endcomment %}
+                    {% if last_event and last_event.event_type == EventType.CLOCK_IN %}
+                        <button type="submit" name="event_type" value="{{ EventType.CLOCK_OUT }}" class="btn-clock red" id="punch-btn">CLOCK OUT</button>
+                    {% else %}
+                        <button type="submit" name="event_type" value="{{ EventType.CLOCK_IN }}" class="btn-clock green" id="punch-btn">CLOCK IN</button>
+                    {% endif %}
+                </div>
+            </form>
+
+            <div class="last-event" style="margin-top:12px;">
+                {% if last_event %}
+                    Status: {{ last_event.get_event_type_display }} — {{ last_event.timestamp|date:"Y-m-d H:i:s" }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+
+            <div class="messages" style="margin-top:10px;">
+                {% for m in messages %}
+                    <div class="msg {% if m.level_tag %}{{ m.level_tag }}{% endif %}">{{ m }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <script>
+    </script>
+
+{% endblock %}
+
+
+

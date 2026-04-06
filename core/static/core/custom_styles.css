@@ -1,0 +1,149 @@
+.field-updated_at_link a {
+    white-space: nowrap;
+}
+
+body.grp-change-form #grp-content-container > form, body.grp-change-form #grp-content-container > form > div {
+    min-width: 100%;
+}
+
+.modal .h2-modal,
+.grp-group > h2 {
+    background-image: linear-gradient(#1e4452e3, #405e88e3);
+    /*text-shadow: 0 1px 0 #3f4b74;*/
+    color: #eff0e8;
+    font-family: monospace;
+    /*font-size: 18px;*/
+    font-variant: all-small-caps;
+    /*padding: 0 10px 4px;*/
+    line-height: 24px;
+    /*background-image: linear-gradient(#c6d6db, #a6d4e4e3);*/
+    text-shadow: none;
+    font-size: 20px;
+    padding: 0 15px 5px;
+}
+
+.modal .h2-modal {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    left: 0;
+    line-height: 34px;
+}
+
+textarea.vLargeTextField {
+    height: 3em;
+    line-height: 1em;
+    overflow: hidden;
+}
+
+.ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next {
+    background-color: #ffffff01;
+}
+
+.ui-datepicker .ui-widget-header {
+    height: 32px;
+}
+
+.ui-datepicker .ui-datepicker-title select,
+.ui-datepicker .ui-datepicker-title select:focus {
+    padding-right: 18px;
+}
+
+#employees_form .document {
+    border: none;
+    max-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: padding 1s linear, max-height 1s linear;
+}
+
+#employees_form .document.open {
+    max-height: 200px; /* достаточно большая, чтобы влез весь контент */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+#employees_form .img-click {
+    cursor: pointer;
+}
+
+#employees_form input[type=file] {
+    font-size: 12px;
+}
+
+#employees_form .grp-cell div.grp-readonly {
+    max-width: 320px;
+}
+
+.accent-for-label {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    /*font-style: italic;*/
+    line-height: 20px;
+    padding-bottom: 4px;
+
+}
+
+.accent-for-data {
+    display: inline-block;
+    min-height: 70px;
+}
+
+.accent-for-data input,
+.accent-for-data textarea {
+    color: #6c6c6c;
+    font-weight: normal;
+}
+
+.param-container table.grp-table td,
+.param-container table.grp-table th {
+    padding: 5px 10px;
+}
+
+.grp-td {
+    width: auto !important;
+}
+
+.grp-table th,
+.grp-table td {
+    white-space: nowrap !important;
+}
+
+.grp-container .select2-container {
+    width: 386px !important;
+    min-width: 386px;
+}
+
+.grp-container .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    float: none;
+    width: min-content;
+    white-space: nowrap;
+}
+
+.grp-container textarea {
+    height: 100px;
+}
+
+div.grp-readonly {
+    border: none;
+}
+
+/*django_admin_flexlist*/
+body .daf-edit-layout-dialog-content {
+    background-color: white !important;
+}
+
+/*django_admin_flexlist*/
+body .daf-edit-layout-dialog-content button {
+    margin: inherit;
+    width: auto;
+    height: auto;
+    border: 1px solid lightgray;
+
+}
+
+table.grp-table td div.grp-related-widget-wrapper {
+    width: max-content;
+}

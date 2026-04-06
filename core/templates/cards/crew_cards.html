@@ -1,0 +1,92 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static '/admin/css/buttons.css' %}">
+    <style>
+        .card_main {
+            display: grid;
+            grid-template-columns: auto 1fr; /* 250px меню + остальное под контент */
+            height: 100vh; /* на весь экран */
+        }
+
+        .card_main .card-wrapper .link_employee_email {
+            display: block;
+        }
+
+        .card_main .card-wrapper {
+            padding: 20px;
+        }
+
+        .card_main .button_blue {
+            margin: 0 10px;
+            padding: 5px 20px;
+        }
+
+        #grp-content-title {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="card_main">
+        <div>
+            <button class="button_blue" onclick="printAllCards()">Print all</button>
+        </div>
+        <div>
+            {#{% include "cards/fragment.html" %}#}
+            {% for id in ids %}
+                <iframe src="/admin/cards/?id={{ id }}" loading="lazy" width="450" height="550" style="overflow: hidden;" scrolling="no" frameborder="0"></iframe>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function printAllCards() {
+            const iframes = document.querySelectorAll("iframe");
+            const win = window.open("", "_blank");
+            let content = "";
+
+            const total = iframes.length;
+            let loaded = 0;
+
+            iframes.forEach(iframe => {
+                const onLoadHandler = () => {
+                    const innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const card = innerDoc.querySelector(".print-area");
+                    if (card) content += card.outerHTML;
+
+                    loaded++;
+                    if (loaded === total) {
+                        const cssHref = `${window.location.origin}/static/card/card_print.css`;
+                        win.document.write(`
+                    <html>
+                    <head>
+                        <title>All cards</title>
+                        <link rel="stylesheet" type="text/css" href="${cssHref}">
+                    </head>
+                    <body onload="window.print(); window.close();">
+                        <div class="print-wrapper" style="display: flex; flex-wrap: wrap; gap: 20px;">${content}</div>
+                    </body>
+                    </html>
+                `);
+                        win.document.close();
+                    }
+                };
+
+                if (iframe.contentDocument.readyState === "complete") {
+                    onLoadHandler(); // если уже загружен
+                } else {
+                    iframe.onload = onLoadHandler;
+                }
+            });
+        }
+    </script>
+
+
+{% endblock %}

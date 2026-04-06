@@ -1,0 +1,13 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+
+{% endblock %}
+
+{% block content %}
+    {% include "admin/charts/chart_content.html" %}
+{% endblock %}

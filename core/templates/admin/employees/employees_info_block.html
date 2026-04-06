@@ -1,0 +1,17 @@
+{% load thumbnail %}
+
+<div style="display: flex; align-items: flex-start; border: 1px solid #ccc; width: 300px; height: 150px; padding: 10px; font-family: sans-serif; background: #f9f9f9;">
+    {% if employee.document %}
+        {% thumbnail employee.document "200x200" crop=False upscale=False quality=60 as thumb %}
+            <img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" alt="Avatar" style="width: 100px; height: 100px; margin-right: 10px; object-fit: contain; background: white;" />
+        {% endthumbnail %}
+{#        <img src="{{ employee.document.url }}" alt="Avatar"#}
+{#             style="width: 100px; height: 100px; margin-right: 10px; object-fit: contain; background: white;"/>#}
+    {% endif %}
+    <div>
+        <div style="font-weight: bold; color: #000; font-size: 14px;">{{ employee.get_file_as }}</div>
+        <div style="color: #555; margin-top: 5px;">{{ employee.get_job_title }}</div>
+        <div style="color: #666; margin-top: 20px;">{{ employee.get_phone }}</div>
+        <div style="color: #0078D7; margin-top: 5px;">{{ employee.get_email }}</div>
+    </div>
+</div>

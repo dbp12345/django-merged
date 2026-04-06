@@ -1,0 +1,138 @@
+/*.tickets_panel {*/
+/*    margin: 0;*/
+/*    padding: 0;*/
+/*    border: 0;*/
+/*    background: pink !important;*/
+/*    display: none;*/
+/*}*/
+
+/*#ticket-overlay-container {*/
+/*    pointer-events: auto;*/
+/*}*/
+
+/*.ticket-overlay {*/
+/*    background: #fff;*/
+/*    border: 1px solid #ddd;*/
+/*    padding: 8px 10px;*/
+/*    border-radius: 4px;*/
+/*    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);*/
+/*    font-size: 13px;*/
+/*    line-height: 1.25;*/
+/*}*/
+
+
+#ticket-overlay-container {
+    pointer-events: auto;
+    position: fixed;
+    right: 12px;
+    bottom: 80px;
+    z-index: 1000;
+    width: 420px;
+}
+
+.ticket {
+    background: #fff9c3;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.ticket-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #000;
+    display: inline-block;
+}
+
+.ticket-meta {
+    font-style: italic;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+    display: inline-block;
+}
+
+.ticket-body {
+    margin-top: 6px;
+    color: #222;
+    font-size: 13px;
+}
+
+.ticket-doc {
+    display: inline-block;
+    margin-top: 6px;
+    margin-right: 8px;
+    font-size: 12px;
+}
+
+.ticket-field-status {
+    margin-left: 6px;
+}
+
+.ticket-field-priority {
+    margin-left: 6px;
+    display: none;
+}
+
+/* Status colouring (пример) */
+.ticket.status-send {
+}
+
+.ticket.status-processing {
+}
+
+.ticket.status-completed {
+}
+
+.ticket.status-unresolved {
+}
+
+/* Priority colouring (пример, дополнительно) */
+.ticket.priority-extreme {
+    border-left: 4px solid #dc3545;
+}
+
+.ticket.priority-high {
+    border-left: 4px solid #f0ad4e;
+}
+
+.ticket.priority-mid {
+    border-left: 4px solid #2b8aef;
+}
+
+.ticket.priority-low {
+    border-left: 4px solid #28a745;
+}
+
+/* крестик для каждой карточки */
+.ticket-close {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  padding: 2px 6px;
+}
+.ticket-close:hover { color: #111; }
+
+/* глобальный крестик в правом верхнем углу контейнера */
+.ticket-close-all {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #333;
+  padding: 2px 6px;
+}
+.ticket-close-all:hover { color: #000; }

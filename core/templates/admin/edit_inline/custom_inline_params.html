@@ -1,0 +1,61 @@
+{% for group_name, group in grouped_params.items %}
+    <div class="param-container inline-group grp-group grp-tabular" id="id_{{ group_name|slugify }}" data-group-name="{{ group_name }}">
+        {% if group_name %}
+            <h2 class="grp-collapse-handler">
+                {{ group_name }}
+            </h2>
+            {% if group_name == "Availability" %}
+                <span class="add-record-btn" data-block-type="availability">edit +</span>
+            {% elif group_name == "Dispatching statuses" %}
+                <span class="add-record-btn" data-block-type="dispatching_statuses">edit +</span>
+            {% elif group_name == "Interactions" %}
+                <span class="add-record-btn" data-block-type="interactions">edit +</span>
+            {% endif %}
+        {% endif %}
+
+        <div class="grp-tr {% if group_name == "Availability" or group_name == "Dispatching statuses" or group_name == "Interactions" %}hidden-fields-container{% endif %}" style="background: #eee;white-space: nowrap; padding: 0 5px 10px;">
+
+            {% for field in group.fields %}
+                <div style="min-width: 280px; display: inline-block">
+                    <label style="display: block; font-weight: bold;">
+                        {{ field.name }}
+                    </label>
+                    {% if field.id %}
+                         <span style="{% if group_name == "Availability" or group_name == "Dispatching statuses" or group_name == "Interactions" %}display: none;{% endif %}">
+                            {% if field.is_checkbox %}
+                                <input type="checkbox" name="{{ field.id }}" {% if field.value %}checked{% endif %}>
+                            {% elif field.is_date %}
+                                <input type="text" name="{{ field.id }}" class="vDateField" value="{{ field.value }}">
+                            {% elif field.is_file %}
+                                {% if field.value %}
+                                    <a href="{{ field.value.url }}" target="_blank">{{ field.value.name }}</a><br>
+                                    <input type="checkbox" name="delete_{{ field.id }}"> Clear<br>
+                                {% endif %}
+                                {{ field.widget_html|safe }}
+                            {% elif field.choices %}
+                                <select name="{{ field.id }}">
+                                    <option value="">---------</option>
+                                    {% for val, label in field.choices %}
+                                        <option value="{{ val }}" {% if val == field.value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="text" name="{{ field.id }}" value="{{ field.value }}">
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+        </div>
+
+        {% if group.html %}
+            <div class="block-history-container" data-block-type="{% if group_name == "Availability" %}availability{% elif group_name == "Dispatching statuses" %}dispatching_statuses{% elif group_name == "Interactions" %}interactions{% else %}{{ group_name|lower }}{% endif %}">
+                {{ group.html|safe }}
+            </div>
+        {% endif %}
+
+    </div>
+{% endfor %}
+
+{# Modals will be generated dynamically by JavaScript from existing fields #}

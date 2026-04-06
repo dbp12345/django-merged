@@ -1,0 +1,427 @@
+@import url('https://fonts.googleapis.com/css2?family=Carlito&display=swap');
+
+@media print {
+    @page {
+        padding: 5px 0 5px;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .print-wrapper {
+        display: flex;
+        justify-content: center;
+    }
+
+    .print-area {
+        margin: 0;
+        display: inline-block;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .company-select {
+        display: none;
+    }
+}
+
+#grp-content-title {
+    display: none;
+}
+
+.card-layout {
+    display: grid;
+    grid-template-columns: auto 1fr; /* 250px меню + остальное под контент */
+    height: 100vh; /* на весь экран */
+}
+
+.card-menu {
+    padding: 20px;
+    border-right: 1px solid #ccc;
+}
+
+.card-wrapper {
+    padding-left: 60px;
+}
+
+.card-menu li {
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    list-style: none;
+    white-space: nowrap;
+}
+
+.card-menu a {
+    text-decoration: none;
+    color: #309bbf;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.card-menu a:hover {
+    color: #333333;
+}
+
+.card-menu a.active {
+    color: black;
+}
+
+.print-area {
+    text-align: left;
+    display: inline-block;
+    transform-origin: top left;
+    position: relative;
+    height: 500px;
+    width: 336px;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid black;
+    background-color: white;
+}
+
+.print-area * {
+    position: absolute;
+    cursor: default;
+    font-family: "Arial", sans-serif;
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
+
+.print-area input {
+    font-family: "Carlito", sans-serif;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    border: none;
+    background: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.print-area .logo {
+    height: 68px;
+    top: 4px;
+    left: 121px;
+}
+
+.print-area .fire_red,
+.print-area .crew_red {
+    color: #ff2b00;
+    font-size: 36px;
+    font-weight: 700;
+    top: 28px;
+    font-family: "Arial", sans-serif;
+}
+
+.print-area .fire_red {
+    left: 34px;
+}
+
+.print-area .crew_red {
+    left: 191px;
+}
+
+.print-area .photo_area {
+    overflow: hidden;
+    height: 140px;
+    width: 122px;
+    top: 146px;
+    left: 28px;
+    z-index: 100;
+    justify-content: center; /* по горизонтали */
+    align-items: center; /* по вертикали */
+}
+
+/*.print-area .photo_area div {*/
+/*  top: 50%;*/
+/*  left: 50%;*/
+/*  transform: translate(-50%, -50%);*/
+/*}*/
+
+.print-area .photo_area img {
+
+}
+
+.cropper-crop-box,
+.cropper-view-box,
+.cropper-point {
+    display: none !important;
+}
+
+.print-area .iqc {
+    font-size: 21px;
+    left: 30px;
+    font-weight: 700;
+    top: 77px;
+}
+
+.print-area .name {
+    font-size: 20px;
+    font-weight: 700;
+    top: 111px;
+    width: 100%;
+    padding-left: 22px;
+    box-sizing: border-box;
+    line-height: 17px;
+}
+
+.print-area .name > span {
+    padding-left: 5px;
+    font-size: 17px;
+    font-weight: normal;
+    cursor: text;
+    text-align: center;
+}
+
+.print-area .row1 {
+    top: 152px;
+}
+
+.print-area .row2 {
+    top: 175px;
+}
+
+.print-area .row3 {
+    top: 198px;
+}
+
+.print-area .row4 {
+    top: 221px;
+}
+
+.print-area .row5 {
+    top: 244px;
+}
+
+.print-area .row6 {
+    top: 267px;
+}
+
+.print-area .row1,
+.print-area .row2,
+.print-area .row3,
+.print-area .row4,
+.print-area .row5,
+.print-area .row6 {
+    font-size: 18px;
+    font-weight: 700;
+    width: 100%;
+    padding-left: 161px;
+    font-family: "Carlito", sans-serif;
+}
+
+.print-area .row1 > span,
+.print-area .row2 > span,
+.print-area .row3 > span,
+.print-area .row4 > span,
+.print-area .row5 > span,
+.print-area .row6 > span {
+    padding-left: 5px;
+    font-size: 18px;
+    font-weight: normal;
+    font-family: "Carlito", sans-serif;
+    cursor: text;
+}
+
+.print-area .qualificat_head {
+    font-size: 20px;
+    left: 26px;
+    font-weight: 700;
+    top: 300px;
+    font-family: "Carlito", sans-serif;
+}
+
+.print-area .q_row1 {
+    top: 327px;
+}
+
+.print-area .q_row2 {
+    top: 352px;
+}
+
+.print-area .q_row3 {
+    top: 377px;
+}
+
+.print-area .q_row1,
+.print-area .q_row2,
+.print-area .q_row3 {
+    font-family: "Carlito", sans-serif;
+    font-size: 20px;
+    width: 100%;
+    padding-left: 33px;
+}
+
+.print-area .q_row1 > span,
+.print-area .q_row2 > span,
+.print-area .q_row3 > span {
+    font-family: "Carlito", sans-serif;
+    left: 174px;
+    cursor: text;
+}
+
+.print-area .sig {
+    font-family: "Carlito", sans-serif;
+    top: 440px;
+    left: 37px;
+    font-size: 16px;
+}
+
+.print-area .company {
+    font-family: "Carlito", sans-serif;
+    top: 480px;
+    left: 20px;
+    font-size: 12px;
+}
+
+
+.print-area .company-select {
+    opacity: 0;
+}
+
+.print-area .company-select:hover {
+    opacity: 1;
+}
+
+.print-area #company-print-text,
+.print-area .company-select {
+    text-indent: 0; /* сброс отступа */
+    direction: ltr;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: none;
+    background: transparent;
+    font: inherit;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+    outline: none;
+    font-family: "Carlito", sans-serif;
+    top: 480px;
+    left: 30px;
+    font-size: 12px;
+}
+
+.print-area #company-print-text {
+    pointer-events: none;
+}
+
+.print-area .company-select:focus {
+    outline: none;
+}
+
+.print-area .company-select::-ms-expand {
+    display: none;
+}
+
+.print-area .company-select-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.print-area .circle {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    left: 272px;
+    top: 236px;
+    cursor: pointer;
+    background-color: transparent;
+    border: 2px solid black;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.print-area .circle.red {
+    background-color: #ff2b00;
+}
+
+.print-area .circle.yellow {
+    background-color: #eaff00;
+}
+
+.print-area .circle.blue {
+    background-color: #1b00ff;
+}
+
+.print-area .qrcode {
+    height: 82px;
+    width: 82px;
+    top: 402px;
+    left: 218px;
+}
+
+.print-area .signature {
+    width: 92px;
+    top: 445px;
+    left: 24px;
+}
+
+.scale {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 336px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: none;
+}
+
+.scale input[type="range"] {
+    width: 220px;
+    flex-shrink: 0;
+}
+
+.scale button {
+    flex-shrink: 0;
+    padding: 0 15px;
+    font-size: 12px;
+    font-weight: bold;
+    border: 1px solid #aaaaaa;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #309bbf4d;
+    color: #555;
+}
+
+/*fragment*/
+.card-wrapper .link_employee_email,
+.card-wrapper .employee_email,
+.card-wrapper .employee_phone,
+.card-wrapper .employee_status {
+    display: none;
+}
+
+.card-wrapper .button_blue {
+    float: right;
+
+}
+
+/*.print-area:before {*/
+/*    content: '';*/
+/*    background-size: 352px;*/
+/*    background-repeat: no-repeat;*/
+/*    background-position: -8px -8px;*/
+/*    background-image: url("/static/img/Screenshot%202025-04-29%20175621.png");*/
+/*    height: 500px;*/
+/*    width: 336px;*/
+/*    overflow: hidden;*/
+/*    box-sizing: border-box;*/
+
+
+/*    position: absolute;*/
+/*    top: 0;*/
+/*    left: 0;*/
+
+/*    z-index: 0;*/
+/*    pointer-events: none;*/
+/*    opacity: 0.3;*/
+/*}*/

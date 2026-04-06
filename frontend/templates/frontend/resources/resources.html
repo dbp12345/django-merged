@@ -1,0 +1,30 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Resources{% endblock %}
+
+{% block style %}
+    <style>
+    .main-container {
+        text-align: left;
+    }
+    </style>
+{% endblock %}
+
+{% block hero %}
+    <section class="content-bg">
+        <div class="main-container">
+            <h2>Forms:</h2>
+            <ul>
+                <li><a href="{% url 'vehicle_form' %}" class="blue">Vehicle Checkout/Return</a></li>
+            </ul>
+
+
+            <h2>Docs:</h2>
+            <ul>
+                {% for title, url in urls.items %}
+                    <li><a href="{{ url }}">{{ title }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+{% endblock %}

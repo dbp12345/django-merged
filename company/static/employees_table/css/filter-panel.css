@@ -1,0 +1,474 @@
+/*For User Settings*/
+#open-settings {
+    padding: 5px;
+    position: absolute;
+    top: -43px;
+    right: 100px;
+    cursor: pointer;
+    z-index: 1010;
+}
+
+/*filter-panel*/
+#filter-panel {
+    /*display: flex;*/
+    /*align-items: center;*/
+    /*justify-content: flex-start;*/
+    /*flex-wrap: wrap;*/
+    padding: 0;
+    border: 1px solid #ddd;
+    /*gap: 15px;*/
+    position: absolute;
+    top: 0;
+    right: -430px;
+    margin-right: -20px;
+    margin-top: -42px;
+    z-index: 1020;
+    height: 100%;
+    width: 430px;
+    transition: right 0.3s ease-out;
+    background-color: #f5f5f5;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#filter-panel.open {
+    right: 0;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, 0.4);
+}
+
+#filter-panel .content {
+    margin: 0 10px;
+    overflow-y: scroll;
+    height: 100%;
+    padding-top: 10px;
+    padding-bottom: 100px;
+}
+
+#filter-panel .controls {
+    position: relative;
+    display: flex;
+    gap: 70px;
+    padding: 0 6px;
+    margin-top: 10px;
+}
+
+#filter-panel .toggle-handle {
+    position: absolute;
+    top: 28px;
+    height: 85px;
+    width: 20px;
+    background: #e3e3e3;
+    left: -20px;
+    cursor: pointer;
+    border-radius: 10px 0 0 10px;
+    border: 1px solid #c0c0c0;
+    border-right: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#filter-panel .toggle-handle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border-left: 3px solid #979797;
+    border-bottom: 3px solid #979797;
+    transform: translate(-50%, -50%) rotate(45deg);
+    /*transition: transform 0.3s ease;*/
+}
+#filter-panel.open .toggle-handle::after {
+    transform: translate(-50%, -50%) rotate(-135deg);
+}
+
+#filter-panel .remove-group {
+    color: #7a7a7a;
+    cursor: pointer;
+    height: 18px;
+    width: 18px;
+    float: right;
+    transition: color 0.3s ease-out;
+    display: none !important; /*чтото оно плохо удаляет и ломает логику. Не хочу разбираться и отключу эту удалялку*/
+}
+
+#filter-panel .remove-group:hover {
+    color: #c9302c;
+}
+
+#filter-panel .add-filter,
+#filter-panel .add-group-buttons>button {
+    text-align: center;
+    display: inline-block;
+    color: #7a7a7a;
+    cursor: pointer;
+    padding: 0 8px;
+    border: 1px solid #b5b5b5;
+    border-radius: 5px;
+    background-color: #eaeaea;
+    /*margin-left: 100px;*/
+    /*transition: border-color 0.3s ease-out;*/
+}
+/*#filter-panel .add-filter svg,*/
+/*#filter-panel .add-group-buttons>button svg{*/
+/*    height: 10px;*/
+/*}*/
+
+#filter-panel .add-filter:hover,
+#filter-panel .add-group-buttons>button:hover {
+    border-color: #333;
+    color: #333;
+    background: #f5f5f5;
+}
+
+#filter-panel .add-group-buttons>button {
+    margin-left: 70px;
+}
+
+/*#filter-panel:hover {*/
+/*    height: auto;*/
+/*}*/
+
+.filter-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.filter-content {
+    /*display: flex;*/
+    align-items: center;
+    gap: 15px;
+}
+
+.filter-content input,
+.filter-content select,
+.filter-content *{
+    font-family: monospace;
+}
+
+.filter-group {
+    position: relative;
+    padding: 10px 8px;
+    background: #e3e3e3;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 35px;
+    border-radius: 6px;
+    border: 1px solid #d0d0d0;
+}
+
+.filter-group .style_for{
+    display: none;
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
+.filter-group:not(:first-of-type) .style_for{
+    display: block;
+    padding: 0 8px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    background: #f9f9f9;
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+    position: absolute;
+    top: -30px;
+    left: 113px;
+}
+
+/*.filter-group:not(:first-of-type)::before {*/
+/*    content: "OR";*/
+/*    padding: 0 8px;*/
+/*    border: 1px solid #d0d0d0;*/
+/*    border-radius: 4px;*/
+/*    background: #f9f9f9;*/
+/*    font-size: 14px;*/
+/*    font-weight: 500;*/
+/*    color: #444;*/
+/*    position: absolute;*/
+/*    top: -30px;*/
+/*    left: 113px;*/
+/*}*/
+
+.filter-group:last-of-type {
+    margin-bottom: 10px;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 0 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 12px;
+    min-width: 160px;
+    background: #fff;
+}
+
+.filter-group label {
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 3px;
+}
+
+#filter-container{
+    min-height: 15px;
+}
+#apply-filters,
+#save-filter {
+    white-space: nowrap;
+    padding: 0 15px;
+    font-size: 12px;
+    font-weight: bold;
+    background: #309bbf;
+    color: white;
+    border: none !important;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    height: 25px;
+    width: max-content;
+}
+
+#apply-filters:hover,
+#save-filter:hover {
+    background: #147d9b;
+}
+
+#filter-form input,
+#filter-form select{
+    min-width: 360px;
+    padding: 0 15px 0 5px;
+    margin-right: 15px;
+    height: 25px;
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: bold;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fdfdfd;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px 0 #eee inset;
+    vertical-align: middle;
+}
+
+#filter-form input[type=date]{
+    min-width: 150px;
+}
+
+#filter-form .filter-type {
+    display: none;
+}
+#filter-form .filter-type,
+#filter-form .filter-options select,
+#filter-form .operator{
+    min-width: 175px;
+}
+
+#filter-form .value-inputs{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#filter-form .value-inputs input{
+    min-width: 175px;
+    margin-right: 3px;
+}
+
+
+.filter-row {
+    border-radius: 5px;
+    border: 1px solid #d0d0d0;
+    align-items: center;
+    padding: 13px 5px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.filter-row:not(:first-of-type)::before {
+    content: "AND";
+    padding: 0 5px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    background: #ebebeb;
+    font-size: 11px;
+    font-weight: 500;
+    color: #8b8a8a;
+    position: absolute;
+    top: -16px;
+    left: 105px;
+}
+
+#filter-panel button {
+    width: inherit;
+    white-space: nowrap;
+    padding: 0 15px;
+    font-size: 12px;
+    font-weight: bold;
+    border: 1px solid #aaaaaa;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #309bbf4d;
+    color: #555;
+}
+
+#filter-panel button:hover {
+    background: #309bbf;
+    color: #fff;
+}
+
+#filter-panel button:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+#filter-panel #add-str-filter,
+#filter-panel #add-date-filter,
+#filter-panel #add-relative-date-filter{
+    background: none;
+    color: #999999;
+}
+
+#filter-panel #add-str-filter:hover,
+#filter-panel #add-date-filter:hover,
+#filter-panel #add-relative-date-filter:hover{
+    color: #333333;
+}
+
+#filter-panel .submit-btn {
+    width: 300px;
+}
+
+#filter-panel #open-advanced-settings {
+    margin-left: 0;
+    width: 125px;
+    opacity: .72;
+    /*background: #309bbf2b;*/
+    /*border: none;*/
+    /*color: #7e7e7e;*/
+}
+
+#filter-panel #view-sql-query {
+    width: 100px;
+    background: none;
+    border: none;
+    color: #c3c3c3;
+    position: absolute;
+    top: 25px;
+    right: 0;
+}
+
+#filter-panel .remove {
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    color: rgb(255 0 0 / 40%);
+    background: #e3e3e3;
+    border: 1px solid #d0d0d0;
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: small;
+    border-radius: 15px;
+}
+
+#filter-panel .remove:hover {
+    color: rgba(255, 0, 0, 0.80);
+    background: none;
+}
+
+#open-advanced-settings{
+    padding: 0 15px;
+    font-size: 12px;
+    font-weight: normal;
+    color: gray;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    height: 25px;
+    width: auto;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.filter-item .delete-filter {
+    background: none;
+    border: none;
+    color: #d9534f;
+    font-size: 12px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.filter-item .delete-filter:hover {
+    color: #c9302c;
+}
+
+.filter-item .filter-name {
+    text-decoration: none;
+    color: #309bbf;
+    font-size: 12px;
+}
+
+.filter-item .filter-name:hover {
+    text-decoration: underline;
+}
+
+
+
+.filter-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#filter-name {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 12px;
+    width: 100%;
+}
+
+/*sql-modal*/
+#sql-modal.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+}
+
+#sql-modal .modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 1000px;
+    position: relative;
+}
+
+#sql-modal .close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}

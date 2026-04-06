@@ -1,0 +1,18 @@
+{% extends "pwa_vehicle/base.html" %}
+
+{% block title %}Reservation Confirmed{% endblock %}
+{% block employee %}
+    {% if employee %}<a href="{% url 'pwa_vehicle_vehicle_form' %}">{{ employee.first_name }} {{ employee.last_name }} <i>({{ employee.email }})</i></a>{% endif %}
+{% endblock %}
+
+{% block hero %}
+    <section class="content-bg">
+        <div class="main-container">
+            <h2>Reservation Confirmed</h2>
+            <p>Your vehicle has been successfully reserved.</p>
+            <p><strong>Please arrive at the scheduled pickup time.</strong></p>
+            <p>You will receive a confirmation email with further instructions shortly.</p>
+            <p><a href="{% url 'pwa_vehicle_vehicle_form' %}"><-back</a></p>
+        </div>
+    </section>
+{% endblock %}

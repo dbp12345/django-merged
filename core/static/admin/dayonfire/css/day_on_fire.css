@@ -1,0 +1,184 @@
+body, html {
+    background-color: #f7f7f7;
+}
+
+#grp-content-title {
+    display: none;
+}
+
+input[readonly], input[disabled], textarea[readonly], select[disabled] {
+    background-color: #fff !important;
+    border: 1px solid #dfdfdf !important;
+    border-radius: 4px !important;
+}
+
+input:not([type="file"]), textarea, select {
+    background-color: #fff !important;
+    border: 1px solid #dfdfdf !important;
+    padding: 4px;
+    border-radius: 4px !important;
+}
+
+label {
+    min-width: 80px;
+    display: inline-block;
+    font-weight: 600;
+    color: #407588;
+}
+
+input.document {
+    width: 90%;
+}
+
+#preview {
+    display: inline-block;
+}
+
+#clearFile {
+    display: inline-block;
+    background: none;
+    border: none;
+    height: 22px;
+}
+
+form .grid {
+    margin-top: 10px;
+}
+
+form .grid input:not([type="checkbox"]) {
+    margin-right: 25px;
+    margin-bottom: 5px;
+}
+
+form .grid input[type="checkbox"] {
+    margin-bottom: 5px;
+}
+
+#dispatch-autocomplete {
+    min-width: 662px;
+}
+
+.ts-control div {
+    font-weight: 600;
+}
+
+.ts-control input {
+    border: none !important;
+    height: inherit;
+    font-weight: inherit;
+}
+
+.crew-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.crew-row input,
+.crew-row select {
+    padding: 4px;
+}
+
+.crew-row button {
+    padding: 0 10px;
+    background: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.add_crew_member {
+    padding: 5px 3px;
+    color: #407588;
+    cursor: pointer;
+}
+
+.add_crew_member:hover {
+    color: #305968;
+}
+
+button[type="submit"] {
+    color: white;
+    float: right;
+    background-color: #28a745;
+    border-radius: 5px;
+    height: 36px;
+    width: 82px;
+}
+
+button[type="submit"]:hover {
+    background-color: #218a3a;
+}
+
+button {
+    width: auto;
+    margin: 0;
+}
+
+.remove-btn {
+    cursor: pointer;
+    color: red;
+    margin-left: 10px;
+    opacity: 0.6;
+}
+
+.remove-btn:hover {
+    opacity: 1;
+}
+
+input#fire {
+    width: 100%;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0;
+    font-size: 14px;
+}
+
+input#incident_name,
+input#fire_number {
+    width: 233px;
+}
+
+input[name="employee_name[]"] {
+    width: 300px;
+}
+
+
+/*TABLE*/
+#day_on_fire-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+    font-family: sans-serif;
+    margin: 50px 0 10px;
+}
+
+#day_on_fire-table th,
+#day_on_fire-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+#day_on_fire-table th {
+    background-color: #d7d7d7;
+    font-weight: bold;
+    text-align: left;
+}
+
+#day_on_fire-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#day_on_fire-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+#day_on_fire-table td:last-child {
+    width: 0;
+}
+
+#day_on_fire-table .remove-btn {
+    margin: 0;
+}

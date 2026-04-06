@@ -1,0 +1,388 @@
+{% extends "pwa_crwb/base.html" %}
+
+{% block style %}
+    <style>
+        .main-container {
+            max-width: inherit;
+            overflow-x: auto;
+        }
+
+        .dispatch-block {
+            overflow: hidden;
+            width: fit-content;
+            min-width: 315px;
+            display: inline-block;
+            text-align: left;
+            padding: 0 30px;
+            border: 3px solid rgba(255, 87, 34, 0.35);
+            border-radius: 6px;
+            background: whitesmoke;
+            color: #251208;
+        }
+
+        .content-bg h2 {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            position: inherit;
+            z-index: 5;
+        }
+
+        .content-bg h2 a {
+            color: whitesmoke;
+            text-decoration: none;
+            padding: 0 15px;
+            opacity: .8;
+        }
+
+        .content-bg h2 a.active {
+            text-decoration: underline;
+            color: whitesmoke;
+            opacity: 1;
+        }
+
+        .dispatch-meta {
+            display: grid;
+            grid-template-columns: max-content auto;
+            gap: 4px 12px;
+        }
+
+        .image-previews {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-start;
+            margin: 10px 0;
+        }
+
+        .preview-image {
+            width: 50px;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .preview-image:hover {
+            transform: scale(1.05);
+            border-color: #999;
+        }
+    </style>
+
+
+    <style>
+        .tabs {
+            width: max-content;
+            margin: 0 auto;
+        }
+
+        .tabs input[type="radio"] {
+            display: none;
+        }
+
+        /* табы (labels) */
+        .tab-controls {
+            display: flex;
+            margin-bottom: -5px;
+        }
+
+        .tab-controls label {
+            flex: 1;
+            color: #cecece;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 10px;
+            border: 3px solid rgba(255, 87, 34, 0.35);
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            background: #6e6e6e;
+            z-index: 10;
+        }
+
+        .tab-controls label:hover {
+        {#background: #f7f7f7;#}
+        }
+
+        /* содержимое табов по умолчанию скрыто */
+        .contents .tab-content {
+            display: none;
+        }
+
+        /* показать нужный таб: input и .contents теперь — соседи (shared parent .tabs) */
+        #tab1:checked ~ .tab-controls label[for="tab1"],
+        #tab2:checked ~ .tab-controls label[for="tab2"] {
+            border: 3px solid rgba(255, 87, 34, 0.35);
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            background: whitesmoke;
+        {#color: #251208;#} color: #000;
+        }
+
+        #tab1:checked ~ .contents #c1,
+        #tab2:checked ~ .contents #c2 {
+            display: block;
+        }
+    </style>
+
+    <style>
+        .main-container {
+            max-width: inherit;
+            overflow-x: auto;
+        }
+
+        .crew-table .name_lnk {
+            color: #309bbf;
+            margin: 0;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .crew-table {
+            display: inline-block;
+            background-color: whitesmoke;
+            white-space: nowrap;
+            color: black;
+            font-family: Arial, sans-serif;
+            font-size: small;
+            border-spacing: 1px 1px;
+            border: 3px solid rgba(255, 87, 34, 0.35);
+            border-radius: 6px;
+            padding-top: 15px;
+        }
+
+        .crew-table th {
+            padding: 5px 7px;
+            text-align: left;
+            font-weight: normal;
+            color: #405e88e3;
+            border-top: 1px solid #ddd;
+        }
+
+        .crew-table tr {
+            margin: 0;
+        }
+
+        .crew-table td {
+            padding: 5px 7px;
+            text-align: left;
+            border-top: 1px solid #ddd;
+        }
+
+        .content-bg h2 {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            padding-top: 5px;
+            position: inherit;
+            z-index: 5;
+        }
+
+        .content-bg h2 a {
+            color: whitesmoke;
+            text-decoration: none;
+            padding: 0 15px;
+            opacity: .8;
+        }
+
+        .content-bg h2 a.active {
+            text-decoration: underline;
+            color: whitesmoke;
+            opacity: 1;
+        }
+
+    </style>
+
+{% endblock %}
+{% block title %}Dispatch{% endblock %}
+{% block employee %}
+    {% if employee %}<a href="{% url 'pwa_crwb_crew' %}">{{ employee.first_name }} {{ employee.last_name }} <i>({{ employee.email }})</i></a>{% endif %}
+{% endblock %}
+
+{% block hero %}
+    <div id="overlay" style="display:none;"></div>
+    <section class="content-bg">
+        <h2>
+            <a href="{% url 'pwa_crwb_crew' %}">Crew</a>
+            <a class="active" href="{% url 'pwa_crwb_dispatch' %}">Dispatch</a>
+            <a href="{% url 'pwa_crwb_mspa' %}">MSPA</a>
+        </h2>
+        <div class="main-container">
+
+            <div class="tabs">
+                <!-- radio должны быть прямыми детьми .tabs -->
+                <input type="radio" id="tab1" name="tabs" checked>
+                <input type="radio" id="tab2" name="tabs">
+
+                {% if list_dispatches_on %}
+                    <div class="tab-controls">
+                        <label for="tab1">Dispatch</label>
+                        <label for="tab2">List of dispatches</label>
+                    </div>
+                {% endif %}
+
+                <div class="contents">
+                    <div id="c1" class="tab-content">
+                        {% if dispatch_data %}
+                            {% for item in dispatch_data %}
+                                <div class="dispatch-block">
+                                    <br>
+                                    {% if item.dispatch.fire %}
+                                        <div class="dispatch-meta">
+                                            <div>Crew:</div>
+                                            <div><strong>{{ item.dispatch.crew.name }}</strong></div>
+                                            <div>Fire number:</div>
+                                            <div><strong>{{ item.dispatch.fire.fire_number }}</strong></div>
+                                            <div>Incident name:</div>
+                                            <div><strong>{{ item.dispatch.fire.incident_name }}</strong></div>
+                                            <div>Incident type:</div>
+                                            <div><strong>{{ item.dispatch.fire.incident_type }}</strong></div>
+                                            <div>Agency:</div>
+                                            <div><strong>{{ item.dispatch.fire.agency }}</strong></div>
+                                            <div>State:</div>
+                                            <div><strong>{{ item.dispatch.fire.state }}</strong></div>
+                                        </div>
+                                    {% else %}
+                                        <p><em>No fire information assigned.</em></p>
+                                    {% endif %}
+
+                                    {% if item.dispatch.manifest or item.dispatch.resource_order %}
+                                        <hr>
+                                        <ul class="dispatch-documents-ul">
+                                            {% if item.dispatch.manifest %}
+                                                <li><a href="{{ item.dispatch.manifest.url }}" target="_blank">Manifest</a></li>
+                                            {% endif %}
+                                            {% if item.dispatch.resource_order %}
+                                                <li><a href="{{ item.dispatch.resource_order.url }}" target="_blank">Resource order</a></li>
+                                            {% endif %}
+                                            {% if item.dispatch.contract and item.dispatch.contract.award_sheet_file %}
+                                                <li><a href="{{ item.dispatch.contract.award_sheet_file.url }}" target="_blank">Award sheet</a></li>
+                                            {% endif %}
+                                            {% if item.dispatch.contract and item.dispatch.contract.full_contract %}
+                                                <li><a href="{{ item.dispatch.contract.full_contract.url }}" target="_blank">Full contract</a></li>
+                                            {% endif %}
+                                        </ul>
+                                        {#                            <div class="image-previews">#}
+                                        {#                                {% if item.dispatch.manifest %}#}
+                                        {#                                    <a href="{{ item.dispatch.manifest.url }}" target="_blank">#}
+                                        {#                                        <img src="{{ item.dispatch.manifest.url }}" alt="Manifest" class="preview-image">#}
+                                        {#                                    </a>#}
+                                        {#                                {% endif %}#}
+                                        {#                                {% if item.dispatch.resource_order %}#}
+                                        {#                                    <a href="{{ item.dispatch.resource_order.url }}" target="_blank">#}
+                                        {#                                        <img src="{{ item.dispatch.resource_order.url }}" alt="Resource order" class="preview-image">#}
+                                        {#                                    </a>#}
+                                        {#                                {% endif %}#}
+                                        {#                                {% if item.dispatch.contract and item.dispatch.contract.award_sheet_file %}#}
+                                        {#                                    <a href="{{ item.dispatch.contract.award_sheet_file.url }}" target="_blank">#}
+                                        {#                                        <img src="{{ item.dispatch.contract.award_sheet_file.url }}" alt="Award sheet" class="preview-image">#}
+                                        {#                                    </a>#}
+                                        {#                                {% endif %}#}
+                                        {#                            </div>#}
+                                    {% endif %}
+
+                                    <hr>
+
+
+
+                                    {% if item.trucks %}
+                                        <strong>Trucks:</strong>
+                                        <ul>
+                                            {% for t in item.trucks %}
+                                                <li>{{ t }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+
+                                    {% if item.saws %}
+                                        <strong>Saws:</strong>
+                                        <ul>
+                                            {% for s in item.saws %}
+                                                <li>{{ s }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+
+                                    {% if item.radios %}
+                                        <strong>Radios:</strong>
+                                        <ul>
+                                            {% for r in item.radios %}
+                                                <li>{{ r }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+
+                                    {% if item.phones %}
+                                        <strong>Phones:</strong>
+                                        <ul>
+                                            {% for p in item.phones %}
+                                                <li>{{ p }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+
+                                    {% if not item.trucks and not item.saws and not item.radios and not item.phones %}
+                                        <p><em>No equipment assigned.</em></p>
+                                    {% endif %}
+
+                                    <hr>
+                                    <ul class="dispatch-documents-ul" style="padding-inline-start: 2px;">
+                                        <li><a href="{% url 'dispatch_docs_odf_crew_manifest_docx_get' %}?id={{ item.dispatch.id }}" style="margin-top: 5px;">ODF Hand Crew Manifest.docx</a></li>
+                                        <li><a href="{% url 'dispatch_docs_odf_eqp_manifest_pdf_get' %}?id={{ item.dispatch.id }}" style="margin-top: 5px;">ODF Eqp Manifest.pdf</a></li>
+                                        <li><a href="{% url 'dispatch_docs_odf_extension_form_docx_get' %}?id={{ item.dispatch.id }}" style="margin-top: 5px;">ODF Extension Form.docx</a></li>
+                                        <li><a href="{% url 'dispatch_docs_vipr_crew_manifest_docx_get' %}?id={{ item.dispatch.id }}" style="margin-top: 5px;">VIPR Crew Manifest.docx</a></li>
+                                        <li><a href="{% url 'dispatch_vipr_eqp_manifest_pdf_get' %}?id={{ item.dispatch.id }}" style="margin-top: 5px;">VIPR Eqp Manifest.pdf</a></li>
+                                        <li><a href="{% url 'dispatch_vipr_extension_form_pdf_get' %}?id={{ item.dispatch.id }}" style="margin-top: 5px;">VIPR Extension Form.pdf</a></li>
+                                    </ul>
+                                </div>
+
+                            {% endfor %}
+                        {% else %}
+                            <div class="dispatch-block">
+                                <br>
+                                <p>No dispatches available.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div id="c2" class="tab-content">
+                        {% if list_dispatches_on %}
+                            <table class="crew-table">
+                                <thead class="crew-header">
+                                <tr style="background-color: #ededed;">
+                                    <th>Dispatch</th>
+                                    <th>Company</th>
+                                    <th>Crew</th>
+                                    <th>Contract</th>
+                                    <th>E/C Number</th>
+                                    <th>First operational</th>
+                                    <th>14th operational</th>
+                                </tr>
+                                </thead>
+                                <tbody class="crew-list">
+                                {% for d in list_dispatches %}
+                                    <tr>
+                                        <td>{{ d.display_name }}</td>
+                                        <td>{{ d.company_rel|default:"" }}</td>
+                                        <td>{{ d.crew|default:"" }}</td>
+                                        <td>{{ d.contract|default:"" }}</td>
+                                        <td>{{ d.ec_number|default:"" }}</td>
+                                        <td>{{ d.first_operational_period|date:"d/m/Y"|default:"" }}</td>
+                                        <td>{{ d.fourteenth_operational_period|date:"d/m/Y"|default:"" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td style="text-align:center;" colspan="7">Empty</td>
+                                    </tr>
+                                {% endfor %}
+
+
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

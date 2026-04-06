@@ -1,0 +1,62 @@
+services:
+  db:
+    image: mysql:8.4
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_0900_ai_ci"
+    env_file:
+      - ../.env
+    environment:
+      MYSQL_DATABASE: "${DB_NAME}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    working_dir: /app
+    env_file:
+      - ../.env
+    environment:
+      DEBUG: "${DEBUG}"
+      DB_ENGINE: "mysql"
+      DB_NAME: "${DB_NAME}"
+      DB_USER: "root"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_HOST: "db"
+      DB_PORT: "3306"
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  db_data:

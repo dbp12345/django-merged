@@ -1,0 +1,179 @@
+html, body {
+    width: 100%;
+    overflow: hidden;
+}
+
+#employees_table tfoot {
+    /*display: none;*/
+}
+
+#grp-content-title {
+    display: none;
+}
+
+#grp-content-container {
+    position: relative;
+}
+
+#employees_table_wrapper {
+    position: relative;
+}
+
+a {
+    color: #309bbf;
+}
+
+#employees_table_wrapper div.dataTables_processing {
+    /*box-shadow: 0 0 10px 0 #eee;*/
+    top: 0;
+    margin-top: 70px;
+}
+
+#employees_table .edit-input {
+    width: 100%;
+    box-sizing: border-box;
+    font-weight: 500;
+    line-height: 2.3;
+    font-size: inherit;
+    height: 30px;
+    padding: 0 5px 0 0;
+    /*margin: 0;*/
+    display: block;
+    resize: both;
+    /*margin-right: 55px;*/
+}
+
+#employees_table tr.odd {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+#employees_table .dataTables_paginate .paginate_button {
+    padding: 0 10px;
+}
+
+#employees_table .dataTables_length select {
+    width: auto;
+    display: inline-block;
+}
+
+
+#employees_table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: 10px;
+}
+
+#employees_table * {
+    white-space: nowrap !important;
+}
+
+/*#employees_table tbody tr {*/
+/*    line-height: 2.5; !* Высота строки *!*/
+/*}*/
+
+#employees_table tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#employees_table tbody .editable {
+    cursor: pointer;
+}
+
+#employees_table tbody .param_field {
+    /*background-color: #ccc;*/
+    height: 100%;
+    width: 100%;
+    display: flow-root;
+    text-align: inherit;
+    min-height: 1em;
+    min-width: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 2.5;
+    /*display: flex;*/
+    /*align-items: center;*/
+}
+
+#employees_table tbody .param_field:empty::before {
+    content: "\00a0"; /* Неразрывный пробел (чтобы span не схлопывался) */
+    /*display: inline-block;*/
+}
+
+#employees_table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#employees_table thead tr th {
+    /*background-image: linear-gradient(#2e2e2e, #3a3a3a);*/
+    background-image: linear-gradient(#2d2d2d, #484848);
+    font-weight: bold;
+    padding: 10px 30px 10px 20px;
+    line-height: 0.5;
+    color: #e5e5e5;
+    border-bottom: none;
+}
+
+/*#employees_table thead tr th:first-child * {*/
+/*    display: none;*/
+/*}*/
+
+#employees_table thead tr th:first-child::after,
+#employees_table thead tr th:first-child::before {
+    content: none !important;
+}
+
+#employees_table thead tr.filters th {
+    /*background-image: linear-gradient(#2e2e2e, #3a3a3a);*/
+    background-image: linear-gradient(#484848, #ffffff00);
+    font-weight: bold;
+    padding: 0 0 1px 1px;
+    line-height: 0.5;
+    color: #e5e5e5;
+    border-bottom: none;
+}
+
+#employees_table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 0 0 15px;
+    vertical-align: middle;
+    max-width: 180px;
+}
+
+#employees_table_wrapper {
+    height: 100vh;
+    display: flex;
+    padding-bottom: 82px;
+    flex-direction: column;
+}
+
+#employees_table {
+    flex-grow: 1;
+    width: 100%;
+}
+
+#employees_table_wrapper .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+#employees_table_length.dataTables_length {
+    width: auto;
+}
+
+#employees_table_length.dataTables_length select {
+    padding: 1px 1px 1px 10px;
+    font-weight: normal;
+    margin: 0 5px 0 5px;
+}
+
+#employees_table_filter.dataTables_filter {
+    width: auto;
+}
+

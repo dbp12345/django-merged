@@ -1,0 +1,68 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {#    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/buttons.css' %}">#}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+
+    <style>
+        .adminlist td {
+            padding: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <table class="adminlist">
+        <tbody>
+        {% for r in rows %}
+            <tr>
+                <td>{{ r.name }}</td>
+                <td>{% if r.is_online %}<strong style="color:green">ONLINE</strong>{% else %}OFFLINE{% endif %}</td>
+                <td>
+                    <ul style="margin:0; padding-left:18px;">
+                        {% for p in r.punches %}
+                            <li>{{ p.in }} - {{ p.out|default:"(no out)" }} {% if p.in_slice %} {% comment %}(in_slice={{ p.in_slice }}){% endcomment %}{% endif %}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6">
+                    No time punches{% if delta != 0 %} for {{ display_date }}{% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <div style="margin-bottom:12px; display:flex; align-items:center; gap:10px;">
+        <a href="{{ prev_url }}" title="Previous day" style="font-size:20px; text-decoration:none;">&larr;</a>
+
+        <a href="{{ today_url }}" title="Today" style="padding:4px 8px; border:1px solid #ccc; border-radius:4px; text-decoration:none;">
+            {% if delta == 0 %}<strong>Today</strong>{% else %}Today{% endif %}
+        </a>
+
+        {% if next_url %}
+            <a href="{{ next_url }}" title="Next day" style="font-size:20px; text-decoration:none;">&rarr;</a>
+        {% endif %}
+
+        <div style="margin-left:12px; color:#666;">
+            {% with delta_abs=delta|stringformat:"d"|cut:"-" %}
+                {% if delta == 0 %}
+                    Showing: Today
+                {% elif delta < 0 %}
+                    Showing: {{ delta_abs }} day{% if delta_abs != "1" %}s{% endif %} ago
+                {% else %}
+                    Showing: in {{ delta_abs }} day{% if delta_abs != "1" %}s{% endif %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+{% endblock %}

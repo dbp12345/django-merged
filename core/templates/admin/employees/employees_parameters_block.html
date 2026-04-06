@@ -1,0 +1,42 @@
+<div class="employee-parameters-container">
+    <div class="param-container" id="employee-parameters-form">
+        {% csrf_token %}
+        <div class="employee-parameters-form">
+            <input type="hidden" id="employee-id" value="{{ employee_id }}">
+            <input type="hidden" id="employee-email" value="{{ employee_email }}">
+            <table>
+                <tbody>
+                {% for key, value in data.items %}
+                    <tr>
+                        <td>{{ key.1 }}</td>
+                        <td>
+                            {% if key.2 == 'SystemTime' %}
+                                <input name="{{ key.0 }}" class="vDateField {{ key.2 }}" value="{{ value }}">
+                            {% elif key.2 == 'Bool' %}
+                                <input type="checkbox" name="{{ key.0 }}" class="{{ key.2 }}"
+                                        {% if value|stringformat:"s" == "True" or value|stringformat:"s" == "true" or value|stringformat:"s" == "on" or value|stringformat:"s" == "1" %}
+                                       checked
+                                        {% endif %}
+                                >
+                            {% elif key.2 == 'Document' %}
+                                {% if value %}
+                                    <a href="{{ value.url }}" target="_blank">{{ value.name }}</a><br>
+                                {% endif %}
+                                <input type="file" name="{{ key.0 }}" class="{{ key.2 }}">
+                            {% else %}
+                                <input type="text" name="{{ key.0 }}" class="{{ key.2 }}" value="{{ value }}">
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {#<button type="submit" class="btn btn-primary">save</button>#}
+    </div>
+
+    <div>
+        <iframe src="/admin/cards/?id={{ employee_id }}" loading="eager" width="450" height="550" style="overflow: hidden;" scrolling="no" frameborder="0"></iframe>
+        <a class="exhibit-n-link" href="/admin/exhibit/get/docx?id={{ employee_id }}">Exhibit-N.docx</a>
+    </div>
+</div>

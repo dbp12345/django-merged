@@ -1,0 +1,25 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+
+{% block style %}
+    <style>
+        .main-container {
+            text-align: left;
+            max-width: 60vw;
+        }
+    </style>
+{% endblock %}
+{% block hero %}
+    <section class="content-bg">
+        <div class="main-container">
+{#            <ul>#}
+{#                {% for title, url in urls.items %}#}
+{#                    <li><a style="font-weight: {% if title == page.title %}bold{% endif %};" href="{{ url }}">{{ title }}</a></li>#}
+{#                {% endfor %}#}
+{#            </ul>#}
+            {{ page.formatted_markdown|safe }}
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,21 @@
+#grp-changelist .grp-changelist-actions select {
+    display: none;
+}
+
+#grp-changelist > * {
+    display: none;
+}
+
+#grp-changelist .results {
+    padding-top: 60px;
+    padding-bottom: 20px;
+    display: inherit !important;
+}
+
+#grp-changelist thead tr th {
+    padding-bottom: 5px;
+}
+
+#grp-changelist thead tr th.oder-grabber {
+    visibility: hidden;
+}

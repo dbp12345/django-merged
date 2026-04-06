@@ -1,0 +1,27 @@
+.grp-table tr.on-fire-status .select2-selection,
+.grp-table tr.on-fire-status select,
+.grp-table tr.on-fire-status input,
+.grp-table tr.on-fire-status th,
+.grp-table tr.on-fire-status td {
+    box-shadow: inset 0 0 0 1000px rgba(255, 0, 0, 0.06) !important;
+}
+
+.grp-table tr.scheduled-status .select2-selection,
+.grp-table tr.scheduled-status select,
+.grp-table tr.scheduled-status input,
+.grp-table tr.scheduled-status th,
+.grp-table tr.scheduled-status td {
+    box-shadow: inset 0 0 0 1000px rgba(255, 225, 0, 0.06) !important;
+}
+
+/*.grp-table tr.not-on-fire-status .select2-selection,*/
+/*.grp-table tr.not-on-fire-status select,*/
+/*.grp-table tr.not-on-fire-status input,*/
+/*.grp-table tr.not-on-fire-status th,*/
+/*.grp-table tr.not-on-fire-status td {*/
+/*    box-shadow: inset 0 0 0 1000px rgba(0, 255, 8, 0.06) !important;*/
+/*}*/
+.grp-table tr.grp-row-even th,
+.grp-table tr.grp-row-even td {
+    background: #fff !important;
+}

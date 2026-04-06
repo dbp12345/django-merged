@@ -1,0 +1,82 @@
+# Исключаем папки миграций из проверок линтера
+**/__pycache__/
+**/node_modules/
+**/cache/
+**/.git/
+**/.idea/
+**/.pycharm_tmp/
+**/*.pyc/
+*/__pycache__/*
+*/node_modules/*
+*/cache/*
+*/.git/*
+*/.idea/*
+*/.pycharm_tmp/*
+*/*.pyc/*
+*/my/
+
+# Logs and log files
+logs/
+*.log
+*.log.*
+
+# Django static and media files
+staticfiles/
+# static/
+media/
+uploaded_documents/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Environment files
+.env
+.env.*
+
+# Database files
+db.sqlite3
+*.db
+*.sqlite
+
+# Keys and sensitive data
+keys/
+
+# Server configuration files
+server/
+
+# Devcontainer configuration
+*.devcontainer/
+
+# Temporary and backup files
+*.bak
+*.swp
+*.tmp
+*.temp
+*~
+
+# Python build artifacts
+*.egg-info/
+dist/
+build/
+*.whl
+*.egg
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Type checking and linting caches
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# IDE and editor files
+*.sublime-*
+.DS_Store
+Thumbs.db

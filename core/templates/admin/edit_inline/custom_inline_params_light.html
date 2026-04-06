@@ -1,0 +1,88 @@
+{% for group_name, group in grouped_params.items %}
+  <div class="param-container inline-group grp-group grp-tabular" style="background-color: transparent; border: none; display: table; width: auto" id="id_{{ group_name }}">
+        {#        {% if group_name %}#}
+        {#            <h2 class="grp-collapse-handler">{{ group_name }}</h2>#}
+        {#        {% endif %}#}
+    {% for row in group.rows %}
+      <div style="display: table-row">
+        {% for field in row %}
+          <label style="display: table-cell; font-weight: bold; padding: 5px 25px">
+            {{ field.name }}
+          </label>
+          <span style="display: table-cell; padding: 5px 25px">
+            {% if field.is_checkbox %}
+              <input type="checkbox" name="{{ field.id }}" {% if field.value %}checked{% endif %}>
+            {% elif field.is_date %}
+              <input type="text" name="{{ field.id }}" class="vDateField" value="{{ field.value }}">
+            {% elif field.is_file %}
+              {% if field.value %}
+                <a href="{{ field.value.url }}" target="_blank">{{ field.value.name }}</a><br>
+                <input type="checkbox" name="delete_{{ field.id }}"> Clear<br>
+              {% endif %}
+              {{ field.widget_html|safe }}
+            {% elif field.choices %}
+              <select name="{{ field.id }}">
+                <option value="">---------</option>
+                {% for val, label in field.choices %}
+                  <option value="{{ val }}" {% if val == field.value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            {% else %}
+              <input type="text" name="{{ field.id }}" value="{{ field.value }}">
+            {% endif %}
+          </span>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    {% if group.html %}
+      {{ group.html|safe }}
+    {% endif %}
+  </div>
+{% endfor %}
+
+
+
+{#{% for group_name, group in grouped_params.items %}#}
+{#    <div class="param-container inline-group grp-group grp-tabular" style="background-color: transparent; border: none; display: table; width: auto" id="id_{{ group_name }}">#}
+        {#        {% if group_name %}#}
+        {#            <h2 class="grp-collapse-handler">{{ group_name }}</h2>#}
+        {#        {% endif %}#}
+{##}
+{##}
+{#        {% for field in group.fields %}#}
+{#            <div style="display: table-row">#}
+{#                <label style="display: table-cell; font-weight: bold;padding: 5px 25px">#}
+{#                    {{ field.name }}#}
+{#                </label>#}
+{#                <span style="display: table-cell;padding: 5px 25px">#}
+{#                        {% if field.is_checkbox %}#}
+{#                            <input type="checkbox" name="{{ field.id }}" {% if field.value %}checked{% endif %}>#}
+{#                        {% elif field.is_date %}#}
+{#                            <input type="text" name="{{ field.id }}" class="vDateField" value="{{ field.value }}">#}
+{#                        {% elif field.is_file %}#}
+{#                            {% if field.value %}#}
+{#                                <a href="{{ field.value.url }}" target="_blank">{{ field.value.name }}</a><br>#}
+{#                                <input type="checkbox" name="delete_{{ field.id }}"> Clear<br>#}
+{#                            {% endif %}#}
+{#                            {{ field.widget_html|safe }}#}
+{#                        {% elif field.choices %}#}
+{#                            <select name="{{ field.id }}">#}
+{#                                <option value="">---------</option>#}
+{#                                {% for val, label in field.choices %}#}
+{#                                    <option value="{{ val }}" {% if val == field.value %}selected{% endif %}>{{ label }}</option>#}
+{#                                {% endfor %}#}
+{#                            </select>#}
+{#                        {% else %}#}
+{#                            <input type="text" name="{{ field.id }}" value="{{ field.value }}">#}
+{#                        {% endif %}#}
+{#                    </span>#}
+{#            </div>#}
+{#        {% endfor %}#}
+{##}
+{#        {% if group.html %}#}
+{#            {{ group.html|safe }}#}
+{#        {% endif %}#}
+{##}
+{#    </div>#}
+{#{% endfor %}#}

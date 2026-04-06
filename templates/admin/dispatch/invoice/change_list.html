@@ -1,0 +1,17 @@
+{% extends "django_admin_flexlist/change_list.html" %}
+
+{# Вставим блок прямо ПЕРЕД таблицей, не ломая тулбары FlexListAdmin #}
+{% block result_list %}
+    <div style="margin:0; display: flex; gap: 12px; flex-wrap: inherit; float: left;">
+        <div style="padding:8px 12px;">
+            <strong>Not paid:</strong>
+            <span>{{ summary_not_paid_total }}</span>
+        </div>
+        <div style="padding:8px 12px;">
+            <strong>Paid:</strong>
+            <span>{{ summary_paid_total }}</span>
+        </div>
+    </div>
+
+    {{ block.super }}
+{% endblock %}

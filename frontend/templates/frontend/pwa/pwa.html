@@ -1,0 +1,24 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+
+{% block style %}
+    <style>
+        .main-container {
+            text-align: left;
+            max-width: 60vw;
+        }
+    </style>
+{% endblock %}
+{% block hero %}
+    <section class="content-bg">
+        <div class="main-container">
+            <ul>
+                <li><a href="{% url "pwa_crwb_crew" %}">Dust Busters CRWB</a></li>
+                <li><a href="{% url "pwa_vehicle_vehicle_form" %}">Dust Busters Vehicle</a></li>
+                <li><a href="{% url "notifications_index" %}">Help Tickets</a></li>
+            </ul>
+        </div>
+    </section>
+{% endblock %}

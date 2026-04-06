@@ -1,0 +1,22 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block hero %}
+    <section class="content-bg">
+        <div class="main-container">
+            <h2>Login</h2>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                {{ form.non_field_errors }}
+                <label>{{ form.username.label_tag }}{{ form.username }}</label>
+                {{ form.username.errors }}
+                <label>{{ form.password.label_tag }}{{ form.password }}</label>
+                {{ form.password.errors }}
+                <label>{{ form.remember }} {{ form.remember.label }}</label>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

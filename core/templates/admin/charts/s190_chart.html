@@ -1,0 +1,66 @@
+<script>
+    $(document).ready(function () {
+        const s190Data2024 = [3, 5, 7, 4, 6, 5, 8, 9, 6, 5, 7, 4];  // замени при необходимости
+        const s190Data2025 = [4, 6, 5, 5, 7, 6, 9, 10, 7, 6, 8, 5]; // замени при необходимости
+
+        const ctx = document.getElementById("s190Chart").getContext("2d");
+
+        const s190Chart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                datasets: [
+                    {
+                        label: "S-190 2024",
+                        data: s190Data2024,
+                        backgroundColor: "rgba(54, 162, 235, 0.6)",
+                        borderColor: "rgba(54, 162, 235, 1)",
+                        borderWidth: 1
+                    },
+                    {
+                        label: "S-190 2025",
+                        data: s190Data2025,
+                        backgroundColor: "rgba(255, 99, 132, 0.6)",
+                        borderColor: "rgba(255, 99, 132, 1)",
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Monthly S-190 Webinars Comparison for 2024 and 2025",
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        position: "top"
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Months"
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Number of Webinars"
+                        }
+                    }
+                }
+            }
+        });
+
+    });
+</script>
+<style>
+</style>
+
+<canvas id="s190Chart" width="460" height="200"></canvas>

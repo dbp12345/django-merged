@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Equipment Manifest</title>
+    {#    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>#}
+    <script src="{% static 'pdf-lib.min.js' %}"></script>
+</head>
+<body>
+
+<script>
+    const context = {{ pdf_context|safe }};
+    const file_name = "{{ file_name }}";
+
+    async function fillPdf() {
+        const formUrl = "{% static 'manifests/VIPR Engine Inventory Fillable.pdf' %}";
+        const formPdfBytes = await fetch(formUrl).then(res => res.arrayBuffer());
+        const pdfDoc = await PDFLib.PDFDocument.load(formPdfBytes);
+        const form = pdfDoc.getForm();
+
+
+        {#form.getFields().forEach(f => console.log(f.getName()));#}
+
+
+        for (const [key, val] of Object.entries(context)) {
+            if (typeof val === "boolean") {
+                const cb = form.getCheckBox(key);
+                val ? cb.check() : cb.uncheck();
+            } else {
+                const tf = form.getTextField(key);
+                tf.setText(val);
+            }
+        }
+
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], {type: 'application/pdf'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = file_name;
+        link.click();
+
+        setTimeout(() => window.close(), 100);
+    }
+
+    fillPdf()
+</script>
+</body>
+</html>

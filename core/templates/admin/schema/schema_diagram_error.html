@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <p><code>{{ cmd }}</code></p>
+    <h3>stderr</h3>
+    <pre style="white-space:pre-wrap">{{ stderr }}</pre>
+    <h3>stdout</h3>
+    <pre style="white-space:pre-wrap">{{ stdout }}</pre>
+    <p><a class="button" href=".">Try again</a></p>
+{% endblock %}

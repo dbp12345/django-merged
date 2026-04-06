@@ -1,0 +1,9 @@
+#fire_run_entries-group a.fire_run_button_run {
+    padding: 10px;
+    display: inline-block;
+}
+
+#student_entries-group a.students_button_run {
+    padding: 10px;
+    display: inline-block;
+}

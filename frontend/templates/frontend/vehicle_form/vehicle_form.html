@@ -1,0 +1,55 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Vehicle Checkout/Return{% endblock %}
+
+{% block style %}
+    <style>
+        .form-group {
+            text-align: left;
+        }
+    </style>
+{% endblock %}
+{% block hero %}
+    <section class="content-bg">
+        <div class="main-container">
+            <h2 style="text-decoration: underline">Vehicle Checkout/Return</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="form-row two-columns">
+                    <div class="form-group">
+                        <label for="first_name">First Name</label>
+                        <input name="first_name" type="text" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Last Name</label>
+                        <input name="last_name" type="text" placeholder="Last Name">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mileage">Mileage</label>
+                    <input name="mileage" type="text" placeholder="Mileage">
+                </div>
+
+                <div class="form-group">
+                    <label for="license">License Plate & Vehicle #</label>
+                    <input name="license" type="text" placeholder="License Plate & Vehicle #">
+                </div>
+
+                {% for side in sides %}
+                    <div class="form-group">
+                        <label>{{ side }}</label>
+                        <input type="file" name="images_{{ forloop.counter }}" multiple>
+                    </div>
+                {% endfor %}
+
+                {% if error %}
+                    <p><span class="error">{{ error }}</span></p>
+                {% endif %}
+
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

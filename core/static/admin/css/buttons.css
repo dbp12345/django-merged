@@ -1,0 +1,19 @@
+.button_blue {
+    width: inherit;
+    white-space: nowrap;
+    padding: 0 15px;
+    margin: 0;
+    font-size: 12px;
+    font-weight: bold;
+    border: 1px solid #aaaaaa;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    background-color: #309bbf4d;
+    color: #555;
+}
+
+.button_blue:hover {
+    background-color: #309bbf !important;
+    color: #fff;
+}

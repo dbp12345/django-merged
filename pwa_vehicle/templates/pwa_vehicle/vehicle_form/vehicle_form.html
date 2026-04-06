@@ -1,0 +1,440 @@
+{% extends "pwa_vehicle/base.html" %}
+{% load static %}
+
+{% block head %}
+{#    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@10.2.9/dist/css/autoComplete.min.css"/>#}
+{#    <script src="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@10.2.9/dist/autoComplete.min.js"></script>#}
+
+    <link href="{% static 'autocomplete/autoComplete.min.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'autocomplete/autoComplete.min.js' %}"></script>
+
+    <style>
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+
+        .no_result {
+            padding: 8px 12px;
+            color: #999;
+            font-style: italic;
+            background-color: #f8f9fa;
+            border-top: 1px solid #ddd;
+        }
+
+        .autoComplete_wrapper {
+            width: 100%;
+        }
+
+        .autoComplete_wrapper > input {
+            display: block;
+            width: 100%;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ffffff80;
+            height: 47px;
+            color: #0c0c0c;
+        }
+
+        .autoComplete_wrapper > input:focus {
+            color: black;
+            border: .06rem solid rgb(57, 22, 15);
+        }
+
+        .autoComplete_wrapper > input {
+            background-position: left 0.5rem top .7rem;
+            padding-left: 1rem;
+            padding-right: 0.5rem;
+        {#padding-left: 2.2rem;#} background-image: none !important;
+        }
+
+        .autoComplete_wrapper > input {
+            color: black !important;
+            border: 1px solid #ccc !important;
+        }
+
+        .autoComplete_wrapper > input::placeholder {
+            color: rgba(57, 22, 15, 0.5) !important;
+        }
+
+        .autoComplete_wrapper > ul > li mark {
+            color: inherit !important;
+            font-weight: normal;
+        }
+
+        .autoComplete_wrapper > ul > li:hover,
+        .autoComplete_wrapper > ul > li[aria-selected="true"] {
+            background-color: rgba(57, 22, 15, 0.1) !important;
+        }
+    </style>
+{% endblock %}
+{% block title %}Vehicle Checkout/Return{% endblock %}
+{% block employee %}
+    {% if employee %}<a href="{% url 'pwa_vehicle_vehicle_form' %}">{{ employee.first_name }} {{ employee.last_name }} <i>({{ employee.email }})</i></a>{% endif %}
+{% endblock %}
+
+{% block hero %}
+    <div id="overlay" style="display:none;"></div>
+    <section class="content-bg">
+        <div class="main-container">
+            <h2 style="text-decoration: underline;margin-top: 5px;margin-bottom: 5px;">Vehicle Checkout/Return</h2>
+
+            <div class="scan-wrap">
+                <button id="start-scan" type="button" style="display: flex; align-items: center; gap: 0.4em;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3h6v6H3V3zm2 2v2h2V5H5zM15 3h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zM10 10h2v2h-2v-2zm4 0h2v2h-2v-2zm0 4h2v2h-2v-2zm-4 0h2v2h-2v-2zm4 4h2v2h-2v-2zm-4 0h2v2h-2v-2z"/>
+                    </svg>
+                    <span>Scan QR</span>
+                </button>
+            </div>
+
+
+            <video id="qr-video" style="display: none; width: 100%; max-height: 200px;"></video>
+
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <br>
+                <br>
+                {#                    <input type="text" id="truck-search-input" list="truck-options" placeholder="Search truck..." class="form-control" autocomplete="off" spellcheck="false" autocorrect="off"/>#}
+                {#                    <datalist id="truck-options">#}
+                {#                        {% for truck in form.fields.truck.queryset %}#}
+                {#                            <option value="{{ truck }}" data-id="{{ truck.id }}">#}
+                {#                        {% endfor %}#}
+                {#                    </datalist>#}
+
+                {#                {{ form.truck.label_tag }}#}
+                {#                <div style="position: relative; display: flex; align-items: center;">#}
+                {#                    <input type="text" id="truck-search-input" class="form-control" placeholder="Search truck..." autocomplete="off"/>#}
+                {#                </div>#}
+                {##}
+                {##}
+                {#                {{ form.license_plate.label_tag }}#}
+                {#                <div style="position: relative; display: flex; align-items: center;">#}
+                {#                    <input type="text" id="license-search-input" class="form-control" placeholder="Enter license plate..." autocomplete="off"/>#}
+                {#                </div>#}
+
+
+                <label for="truck-search-input">Truck</label>
+                <div style="position: relative; display: flex;">
+                    <input type="text" id="truck-search-input" class="form-control" placeholder="Search truck..." autocomplete="off">
+                </div>
+
+                <label for="license-search-input">License Plate</label>
+                <div style="position: relative; display: flex;">
+                    <input type="text" id="license-search-input" class="form-control" placeholder="Enter license plate..." autocomplete="off">
+                </div>
+
+
+                {#                {{ form.as_p }}#}
+                <div style="display: none;">
+                    {{ form.truck }}
+                    {{ form.license_plate }}
+                </div>
+
+{#                {{ form.status.label_tag }}#}
+{#                {{ form.status }}#}
+{#                <label for="multi-photo" style="margin-top: 1em;">Take 4 photos (front, passenger, rear, driver)</label>#}
+{#                <input type="file" id="multi-photo" accept="image/*" capture="environment" multiple>#}
+
+                <!-- остальные поля -->
+                {% for field in form.visible_fields %}
+                    {% if field.name != "truck" and field.name != "license_plate" %}
+                        <div class="form-group">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <button type="submit">Submit</button>
+                {% if error %}
+                    <p><span class="error">{{ error }}</span></p>
+                {% endif %}
+            </form>
+
+        </div>
+    </section>
+
+    <script>
+        const truckSelect = document.getElementById("id_truck");
+        const licenseInput = document.getElementById("id_license_plate");
+        const statusInput = document.getElementById("id_status");
+
+        const truckSearchInput = document.getElementById("truck-search-input");
+        const licenseVisibleInput = document.getElementById("license-search-input");
+
+        const truckNameToId = {{ truck_name_to_id|safe }};
+        const truckIdToPlate = {{ truck_id_to_plate|safe }};
+        const truckIdToStatus = {{ truck_id_to_status|safe }};
+        const licensePlates = {{ license_plates|safe }};
+
+        function disableLicense(plate) {
+            licenseInput.value = plate || "";
+            licenseVisibleInput.value = plate || "";
+            licenseInput.readOnly = true;
+            {#licenseInput.disabled = true;#}
+        }
+
+        function enableLicense() {
+            licenseInput.readOnly = false;
+            {#licenseInput.disabled = false;#}
+        }
+
+        function clearTruckSelection() {
+            truckSelect.value = "";
+            truckSearchInput.value = "";
+            truckSearchInput.classList.remove("is-valid");
+            truckSearchInput.classList.add("is-invalid");
+        }
+
+        function setTruckValid() {
+            truckSearchInput.classList.remove("is-invalid");
+            truckSearchInput.classList.add("is-valid");
+        }
+
+        function setLicenseValid() {
+            licenseVisibleInput.classList.remove("is-invalid");
+            licenseVisibleInput.classList.add("is-valid");
+        }
+
+        const truckAutoInstance = new autoComplete({
+            selector: "#truck-search-input",
+            placeHolder: "Search truck...",
+            data: {src: Object.keys(truckNameToId), cache: true},
+            noResults: true,
+            threshold: 0,
+            resultsList: {
+                maxResults: 1000,
+                noResults: true,
+                element: (list, data) => {
+                    if (!data.results.length) {
+                        const message = document.createElement("div");
+                        message.className = "no_result";
+                        {#message.innerHTML = `<span>No results for "<strong>${data.query}</strong>"</span>`;#}
+                        message.innerHTML = `<span>No results</span>`;
+                        list.appendChild(message);
+                    }
+                }
+            },
+            events: {
+                input: {
+                    selection: (event) => {
+                        const name = event.detail.selection.value;
+                        const truckId = truckNameToId[name];
+                        if (!truckId) return;
+
+                        truckSelect.value = truckId;
+                        truckSearchInput.value = name;
+                        setTruckValid();
+
+                        const license = truckIdToPlate[truckId];
+                        if (license) {
+                            disableLicense(license);
+                            setLicenseValid();
+                        } else {
+                            enableLicense();
+                        }
+
+                        const status = truckIdToStatus[truckId];
+                        if (statusInput && status) statusInput.value = status;
+                    }
+                }
+            }
+        });
+
+        const licenseAutoInstance = new autoComplete({
+            selector: "#license-search-input",
+            placeHolder: "Enter license plate...",
+            data: {src: licensePlates, cache: true},
+            threshold: 0,
+            resultsList: {
+                maxResults: 1000,
+                {% comment %}
+                noResults: true,
+                element: (list, data) => {
+                    if (!data.results.length) {
+                        const message = document.createElement("div");
+                        message.className = "no_result";
+                        message.innerHTML = `{#<span>No results for "<strong>${data.query}</strong>"</span>#}`;
+                        message.innerHTML = `<span>No results</span>`;
+                        list.appendChild(message);
+                    }
+                }
+                {% endcomment %}
+            },
+            events: {
+                input: {
+                    selection: (event) => {
+                        const licenseRaw = event.detail.selection.value;
+                        const normalized = licenseRaw.trim().toUpperCase().replace(/[\s\-]/g, "");
+
+                        const [matchedId] = Object.entries(truckIdToPlate).find(
+                            ([, plate]) => plate && plate.replace(/[\s\-]/g, "").toUpperCase() === normalized
+                        ) || [];
+
+                        if (!matchedId) return;
+
+                        truckSelect.value = matchedId;
+
+                        const truckName = Object.keys(truckNameToId).find(name => truckNameToId[name] == matchedId);
+                        if (truckName) {
+                            truckSearchInput.value = truckName;
+                            setTruckValid();
+                        }
+
+                        disableLicense(licenseRaw);
+                        setLicenseValid();
+
+                        const status = truckIdToStatus[matchedId];
+                        if (statusInput && status) statusInput.value = status;
+                    }
+                }
+            }
+        });
+
+        truckSearchInput.addEventListener("focus", () => {
+            truckAutoInstance.start(truckSearchInput.value);
+        });
+
+        licenseVisibleInput.addEventListener("focus", () => {
+            licenseAutoInstance.start(licenseVisibleInput.value);
+        });
+
+        truckSearchInput.addEventListener("blur", () => {
+            const name = truckSearchInput.value.trim();
+            if (!(name in truckNameToId)) {
+                clearTruckSelection();
+                enableLicense();
+            }
+        });
+
+        licenseVisibleInput.addEventListener("input", () => {
+            const raw = licenseVisibleInput.value.trim().toUpperCase().replace(/[\s\-]/g, "");
+
+            const [matchedId] = Object.entries(truckIdToPlate).find(
+                ([, plate]) => plate && plate.replace(/[\s\-]/g, "").toUpperCase() === raw
+            ) || [];
+
+            if (matchedId) {
+                truckSelect.value = matchedId;
+
+                const truckName = Object.keys(truckNameToId).find(name => truckNameToId[name] == matchedId);
+                if (truckName) {
+                    truckSearchInput.value = truckName;
+                    setTruckValid();
+                }
+
+                disableLicense(licenseVisibleInput.value);
+                setLicenseValid();
+
+                const status = truckIdToStatus[matchedId];
+                if (statusInput && status) statusInput.value = status;
+            } else {
+                // ручной номер — разрешаем редактировать
+                enableLicense();
+                truckSelect.value = "";
+                truckSearchInput.value = "";
+                truckSearchInput.classList.remove("is-valid", "is-invalid");
+            }
+
+            licenseInput.value = licenseVisibleInput.value; // ← ключевая строка
+        });
+    </script>
+
+    <script>
+        const form = document.querySelector("form");
+        const submitBtn = form.querySelector("button[type=submit]");
+
+        form.addEventListener("submit", function () {
+            document.getElementById("overlay").style.display = "block";
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Submitting...";
+        });
+    </script>
+
+    <script type="module">
+        import QrScanner from "/static/pwa_vehicle/js/qr-scanner.min.js";
+
+        QrScanner.WORKER_PATH = "/static/pwa_vehicle/js/qr-scanner-worker.min.js";
+
+        const scannerBtn = document.getElementById("start-scan");
+        const videoElem = document.getElementById("qr-video");
+        let scanner = null;
+
+        scannerBtn.addEventListener("click", () => {
+            videoElem.style.display = "block";
+            scanner = new QrScanner(videoElem, result => {
+                const normalized = result.trim().toUpperCase().replace(/[\s\-]/g, "");
+
+                const [matchedId] = Object.entries(truckIdToPlate).find(
+                    ([, plate]) => plate && plate.replace(/[\s\-]/g, "").toUpperCase() === normalized
+                ) || [];
+
+                licenseInput.value = result;
+                licenseVisibleInput.value = result;
+                setLicenseValid();
+
+                if (matchedId) {
+                    truckSelect.value = matchedId;
+
+                    const truckName = Object.keys(truckNameToId).find(name => truckNameToId[name] == matchedId);
+                    if (truckName) {
+                        truckSearchInput.value = truckName;
+                        setTruckValid();
+                    }
+
+                    disableLicense(result);
+
+                    const status = truckIdToStatus[matchedId];
+                    if (statusInput && status) statusInput.value = status;
+                } else {
+                    // произвольный номер
+                    truckSelect.value = "";
+                    truckSearchInput.value = "";
+                    truckSearchInput.classList.remove("is-valid", "is-invalid");
+                    enableLicense();
+                }
+
+                videoElem.style.display = "none";
+                scanner.stop();
+            });
+
+            scanner.start();
+        });
+    </script>
+
+{#    <script>#}
+{#        document.getElementById("multi-photo").addEventListener("change", function (e) {#}
+{#            const files = Array.from(e.target.files);#}
+{##}
+{#            const front = document.getElementById("id_picture_front");#}
+{#            const passenger = document.getElementById("id_picture_passenger_side");#}
+{#            const rear = document.getElementById("id_picture_rear");#}
+{#            const driver = document.getElementById("id_picture_driver_side");#}
+{##}
+{#            if (files[0]) front.files = createFileList([files[0]]);#}
+{#            if (files[1]) passenger.files = createFileList([files[1]]);#}
+{#            if (files[2]) rear.files = createFileList([files[2]]);#}
+{#            if (files[3]) driver.files = createFileList([files[3]]);#}
+{#        });#}
+{##}
+{#        // Вспомогательная функция, чтобы создать FileList (нельзя напрямую new FileList())#}
+{#        function createFileList(files) {#}
+{#            const dataTransfer = new DataTransfer();#}
+{#            files.forEach(file => dataTransfer.items.add(file));#}
+{#            return dataTransfer.files;#}
+{#        }#}
+{#    </script>#}
+
+{% endblock %}

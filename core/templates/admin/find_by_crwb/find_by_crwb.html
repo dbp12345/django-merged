@@ -1,0 +1,217 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+
+    <link href="{% static 'admin/dayonfire/css/awesomplete.min.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'admin/dayonfire/js/awesomplete.min.js' %}"></script>
+
+    <link href="{% static 'admin/css/find_by_crwb.css' %}" rel="stylesheet"/>
+
+{% endblock %}
+
+{% block content %}
+    <div class="crwb-wrap">
+        <div class="crwb-controls">
+{#            <label for="bossSearch"><strong>Boss:</strong></label>#}
+            <input id="bossSearch" type="text" placeholder="Search crew boss..." autocomplete="off"
+                   value="{% if crew_boss %}{{ crew_boss.get_file_as }} - {{ crew_boss.get_email }}{% endif %}">
+        </div>
+
+        <div class="crwb-table-wrap">
+            <table class="crwb">
+                <thead>
+                <tr>
+                    <th>File As</th>
+                    <th class="num">Job title</th>
+                    <th class="num">Crew</th>
+                    <th class="num">Availability status</th>
+                    <th class="num">Fires</th>
+                    <th class="num">Periods (FireRun)</th>
+                    <th class="num">Periods (DoF)</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for r in rows %}
+                    <tr style="background-color: {{ r.status_color }}" title="{{ r.status }}">
+                        <td class="name"><a href="{{ r.admin_url }}">{{ r.file_as|default:"-" }}</a></td>
+                        <td class="num">{{ r.job_title }}</td>
+                        <td class="num">{{ r.crew }}</td>
+                        <td class="num">{{ r.availability_status }}</td>
+                        <td class="num">{{ r.fires }}</td>
+                        <td class="num">{{ r.periods_firerun }}</td>
+                        <td class="num">{{ r.periods_dof }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding:16px;">No data</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const inputEl = document.getElementById("bossSearch");
+
+            // если нет обёртки — создаём (для спинера)
+            let wrap = inputEl.closest(".crwb-input-wrap");
+            if (!wrap) {
+                wrap = document.createElement("span");
+                wrap.className = "crwb-input-wrap";
+                inputEl.classList.add("crwb-input");
+                inputEl.parentNode.insertBefore(wrap, inputEl);
+                wrap.appendChild(inputEl);
+            }
+
+            const aw = new Awesomplete(inputEl, {
+                minChars: 2,
+                maxItems: 50,
+                autoFirst: true
+            });
+
+            // (1) безопасный фильтр по объектам (label/value) + токены через пробел/запятую (AND)
+            aw.filter = function (text, input) {
+                const label = (typeof text === "string") ? text : (text && text.label) || (text && text.value) || "";
+                const t = label.toLowerCase();
+                const tokens = input.toLowerCase().split(/[,\s]+/).filter(Boolean);
+                return tokens.every(tok => t.indexOf(tok) !== -1);
+            };
+
+            // (3) хайлайт совпадений
+            aw.item = function (text, input) {
+                const label = (typeof text === "string") ? text : (text && text.label) || (text && text.value) || "";
+                const li = document.createElement("li");
+                // экранируем спецсимволы в RegExp
+                const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                let html = label;
+                input.toLowerCase().split(/[,\s]+/).filter(Boolean).forEach(tok => {
+                    const re = new RegExp("(" + esc(tok) + ")", "ig");
+                    html = html.replace(re, "<mark>$1</mark>");
+                });
+                li.innerHTML = html;
+                return li;
+            };
+
+            const cache = new Map();       // baseToken -> [{id,label,value}, ...]
+            let controller = null;         // AbortController для fetch
+            let debounceTimer = null;
+            let currentBase = "";
+            let pendingEnter = false;      // (5) обработка Enter до загрузки списка
+
+            function setLoading(flag) {
+                wrap.classList.toggle("is-loading", flag);
+            }
+
+            function useList(base) {
+                const data = cache.get(base) || [];
+                aw.list = data.length ? data : [{label: "Ничего не найдено", value: ""}];
+            }
+
+            async function fetchBosses(base) {
+                if (!base || base.length < 2) {
+                    aw.list = [];
+                    return;
+                }
+
+                if (controller) controller.abort();
+                controller = new AbortController();
+                const signal = controller.signal;
+
+                setLoading(true);
+                try {
+                    const resp = await fetch(`/admin/find-by-crwb/search-bosses?q=${encodeURIComponent(base)}`, {signal});
+                    const data = resp.ok ? await resp.json() : [];
+                    cache.set(base, data);
+
+                    if (base === currentBase) {
+                        useList(base);
+
+                        // (5) если пользователь ждал Enter — сразу выбираем первого
+                        if (pendingEnter) {
+                            pendingEnter = false;
+                            const first = data[0];
+                            if (first && first.id) {
+                                const url = new URL(window.location.href);
+                                url.searchParams.set("boss", first.id);
+                                window.location.href = url.toString();
+                            }
+                        }
+                    }
+                } catch (e) {
+                    if (e && e.name === "AbortError") return;
+                    aw.list = [{label: "Ошибка запроса", value: ""}];
+                } finally {
+                    setLoading(false);
+                    controller = null;
+                }
+            }
+
+            inputEl.addEventListener("input", function () {
+                const qRaw = inputEl.value;
+                const q = qRaw.trim();
+                const hasDelim = /[,\s]/.test(q);
+                // (4) аккуратный base-токен: всё до первого разделителя + обрезаем крайние пробелы/запятые
+                let base = (q.split(/[,\s]+/)[0] || "").replace(/^[,\s]+|[,\s]+$/g, "");
+                currentBase = base;
+
+                clearTimeout(debounceTimer);
+
+                if (!q) {
+                    aw.list = [];
+                    return;
+                }
+
+                if (hasDelim) {
+                    // после разделителя — только локальная фильтрация
+                    if (cache.has(base)) {
+                        useList(base);
+                    } else {
+                        // если по base ещё не грузили — загрузим один раз
+                        debounceTimer = setTimeout(() => fetchBosses(base), 250);
+                    }
+                } else {
+                    // до разделителя — стандартный онлайн-поиск по первому слову (base == весь ввод)
+                    if (cache.has(base)) useList(base);
+                    debounceTimer = setTimeout(() => fetchBosses(base), 250);
+                }
+            });
+
+            // (2) надёжнее на селекте: матчим по label/value, иначе берём первый
+            inputEl.addEventListener("awesomplete-selectcomplete", function () {
+                const list = cache.get(currentBase) || [];
+                const txt = inputEl.value;
+                let picked = list.find(x => x.value === txt || x.label === txt) || list[0];
+                if (picked && picked.id) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("boss", picked.id);
+                    window.location.href = url.toString();
+                }
+            });
+
+            // (5) Enter: если списка ещё нет — подгружаем и после ответа сразу переходим
+            inputEl.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    const list = cache.get(currentBase);
+                    if (!list) {
+                        pendingEnter = true;
+                        fetchBosses(currentBase);
+                        e.preventDefault();
+                        return;
+                    }
+                    const first = list[0];
+                    if (first && first.id) {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("boss", first.id);
+                        window.location.href = url.toString();
+                    }
+                }
+            });
+        })();
+    </script>
+{% endblock %}

@@ -1,0 +1,16 @@
+services:
+  web:
+    volumes:
+      # Используем относительный путь для маппинга кода
+      # Это позволяет Cursor видеть ошибки и делать их кликабельными
+      - ../:/app:z
+    environment:
+      DEBUG: "True"
+      TMPDIR: "/app/.pycharm_tmp"
+      # Важно: указываем Python путь для IDE
+      PYTHONPATH: "/app"
+    security_opt:
+      - label=disable
+    # Переопределяем команду: контейнер работает, но Django не запускается автоматически
+    # Django будет запускаться вручную в терминале Cursor
+    command: ["bash", "-c", "tail -f /dev/null"]

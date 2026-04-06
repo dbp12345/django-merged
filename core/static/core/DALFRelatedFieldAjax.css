@@ -1,0 +1,25 @@
+.grp-module aside.c-1 {
+    width: auto !important;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+aside.c-1 > header {
+    flex: 1 0 100%;
+}
+
+aside.c-1 > #search,
+aside.c-1 > #grp-filters {
+    flex: 0 0 auto;
+}
+
+aside.c-1 > #search {
+
+}
+
+aside.c-1 > #grp-filters {
+    width: 404px;
+}

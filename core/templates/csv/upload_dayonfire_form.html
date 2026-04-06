@@ -1,0 +1,87 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/buttons.css' %}">
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+
+    <script>
+        let previousFailed = null;
+        let intervalId = null;
+
+        function updateErrors() {
+            fetch("{% url 'csv_dayonfire_import_status' %}?errors=1")
+                .then(res => res.json())
+                .then(errors => {
+                    document.getElementById("errors").innerText = errors.join("\n");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        }
+
+        function updateStatus() {
+            fetch("{% url 'csv_dayonfire_import_status' %}")
+                .then(response => response.json())
+                .then(data => {
+                    const html = `
+                    <div style="color: green;">OK: ${data.ok}</div>
+                    <div style="color: red;">FAILED: ${data.failed}</div>
+                    <div style="color: orange;">PENDING: ${data.pending}</div>
+                `;
+                    document.getElementById("status").innerHTML = html;
+
+                    if (previousFailed !== null && data.failed !== previousFailed) {
+                        updateErrors();
+                    }
+
+                    previousFailed = data.failed;
+
+                    if (data.pending === 0 && intervalId !== null && (data.ok > 0 || data.failed > 0)) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        }
+
+        updateStatus();
+        updateErrors();
+        intervalId = setInterval(updateStatus, 2000);
+    </script>
+
+    <style>
+        #status {
+            margin: 15px 0 10px;
+        }
+
+        #status > div {
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        #errors {
+            color: #8d5252;
+            font-family: monospace;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="csv_file" accept=".csv" required style="width: 100%;">
+        <br>
+        <button class="button_blue" type="submit" style="margin-top: 10px;">Import</button>
+    </form>
+
+    <div id="status"></div>
+    <div id="errors"></div>
+
+{% endblock %}

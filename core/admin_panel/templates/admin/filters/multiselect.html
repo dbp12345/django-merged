@@ -1,0 +1,25 @@
+{% load i18n %}
+<div class="filter">
+  <h3>{% blocktrans %}By {{ title }}{% endblocktrans %}</h3>
+  <form method="get">
+    {# сохраняем остальные параметры #}
+    {% for k,v in request.GET.items %}
+      {% if k != spec.parameter_name %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+      {% endif %}
+    {% endfor %}
+
+    {% with selected=spec.value %}
+      <select name="{{ spec.parameter_name }}" multiple size="6" style="width:100%">
+        {% for value,label in spec.lookups %}
+          <option value="{{ value }}"{% if value in selected %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    {% endwith %}
+
+    <div style="margin-top:.5rem">
+      <input type="submit" value="{% trans 'filter' %}">
+      <a href="{{ request.path }}">{% trans "All" %}</a>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,99 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+
+    <style>
+        .form-wrapper {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px 30px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-wrapper h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #444;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-actions {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .btn-submit {
+            background-image: linear-gradient(#4fb2d3, #309bbf);
+            height: auto;
+            width: auto;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease-in-out;
+        }
+
+        .btn-submit:hover {
+            color: #444;
+            background-image: linear-gradient(white, #eee);
+        }
+    </style>
+
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+        });
+
+
+    </script>
+{% endblock %}
+
+{% block content %}
+
+    <div class="form-wrapper">
+        <h2>Add Employee</h2>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="email">Employee Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter employee email" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">Add</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

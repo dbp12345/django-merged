@@ -1,0 +1,1013 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrahead %}
+    {{ block.super }}
+    <!-- Bootstrap 4 -->
+    {#    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">#}
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet"/>
+
+    <link href="{% static 'grappelli/css/admin_breadcrumbs.css' %}" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>
+    {#<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>#}
+    {#<script src="https://cdn.datatables.net/1.13.11/js/jquery.dataTables.min.js"></script>#}
+    <script type="text/javascript" src="{% static 'dataTables/js/11311/jquery.dataTables.min.js' %}"></script>
+
+    <!-- DataTables Bootstrap 4 -->
+    {#    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>#}
+    {#<link rel="stylesheet" href="https://cdn.datatables.net/1.13.11/css/jquery.dataTables.min.css">#}
+    <link href="{% static 'dataTables/css/11311/jquery.dataTables.min.css' %}" rel="stylesheet"/>
+    {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>#}
+    <script type="text/javascript" src="{% static 'employees_table/js/Sortable.min.js' %}"></script>
+
+    <link href="{% static 'employees_table/css/table.css' %}" rel="stylesheet"/>
+    <link href="{% static 'employees_table/css/filter-panel.css' %}" rel="stylesheet"/>
+    <link href="{% static 'core/custom_styles.css' %}" rel="stylesheet"/>
+    <link href="{% static 'admin/css/modal.css' %}" rel="stylesheet"/>
+
+    <style>
+        .add-emp {
+            position: fixed;
+            top: 42px;
+            right: 23px;
+            z-index: 1000;
+        }
+    </style>
+
+    <script>
+        grp.jQuery(document).ready(function () {
+            let url = "{{ url|safe }}";
+            {#let notEditableFields = {{ not_editable_fields|safe }};#}
+            let editableFields = {{ editable_fields|safe }};
+            let columnsData = {{ columns|safe }};
+            let savedLength = localStorage.getItem("employeesPageLength");
+            let defaultLength = savedLength ? parseInt(savedLength) : 50;
+
+            let columns = columnsData.map(key => ({
+                "data": key,
+                "title": key,
+                "render": (data, type, row) => {
+                    let value = row[key] ?? "";
+                    return editableFields.includes(key)
+                        ? `<span class="param_field editable" data-param="${key}" data-employee="${row.id}">${value}</span>`
+                        : `<span class="param_field">${value}</span>`;
+                }
+//                "render": (data, type, row) => {
+//                    let value = row[key] ?? "";
+//                    return notEditableFields.includes(key)
+//                        ? `<span class="param_field">${value}</span>`
+//                        : `<span class="param_field editable" data-param="${key}" data-employee="${row.id}">${value}</span>`;
+//                }
+            }));
+
+            // **Добавляем `tfoot` для фильтрации**
+            if (grp.jQuery("#employees_table tfoot").length === 0) {
+                let filterRowHTML = "<tfoot><tr>";
+                columns.forEach(col => {
+                    filterRowHTML += `<th><input type="text" class="column-search"
+{#                        placeholder="🔍 ${col.title}"#}
+                        data-column="${col.data}"
+                        style="width: 100%; box-sizing: border-box;"></th>`;
+                });
+                filterRowHTML += "</tr></tfoot>";
+                grp.jQuery("#employees_table").append(filterRowHTML);
+            }
+
+            let lastXhr = null;
+
+            let table = grp.jQuery("#employees_table").DataTable({
+                processing: true,
+                serverSide: true,
+
+                // кастомный ajax, чтобы можно было abort()
+                ajax: function (data, callback, settings) {
+                    // прокинем значения колонок-фильтров в payload
+                    grp.jQuery("#employees_table thead input.column-search").each(function (index) {
+                        data["columns[" + index + "][search][value]"] = grp.jQuery(this).val() || "";
+                    });
+
+                    // отменяем предыдущий незавершённый запрос
+                    if (lastXhr && lastXhr.readyState !== 4) {
+                        lastXhr.abort();
+                    }
+
+                    lastXhr = grp.jQuery.ajax({
+                        url: url,
+                        type: "POST",
+                        dataType: "json",
+                        data: data,
+                        success: function (json) {
+                            callback(json);
+                        },
+                        error: function (xhr, status) {
+                            if (status === "abort") return;
+                        },
+                        complete: function () {
+                            lastXhr = null;
+                        }
+                    });
+
+                    settings.jqXHR = lastXhr;
+                },
+
+                columns: columns,
+                pagingType: "full_numbers",
+                pageLength: defaultLength,
+                lengthMenu: [25, 50, 100, 250, 500],
+                {#"order": [[0, "desc"]],#}
+                order: [],
+                orderMulti: true,  // Enable multi-column sorting (Shift+click to add secondary sort)
+                dom: '<"top"l>rt<"bottom"ip><"clear">',
+                responsive: true,
+                autoWidth: false
+            });
+
+            table.on("length.dt", function (e, settings, len) {
+                localStorage.setItem("employeesPageLength", len);
+            });
+
+            {% comment %}
+            grp.jQuery("#employees_table thead").on("keyup", "input.column-search", function () {
+                table.draw();
+            });
+            {% endcomment %}
+
+            // **Фильтрация по колонкам**
+            {% comment %}
+            grp.jQuery("#employees_table tfoot").on("keyup change", ".column-search", function () {
+                table.ajax.reload();
+            });
+            {% endcomment %}
+
+            grp.jQuery("#employees_table tbody").on("click", ".editable", function () {
+                var cell = grp.jQuery(this);
+
+                if (cell.find("textarea").length > 0) {
+                    return;
+                }
+
+                var originalValue = cell.text();
+                var input = grp.jQuery("<textarea class='edit-input'></textarea>").val(originalValue);
+                cell.html(input);
+                input.focus();
+
+                input.on("blur", function () {
+                    var newValue = input.val();
+                    if (newValue !== originalValue) {
+                        cell.text(newValue);
+                        updateParameter(cell, newValue);
+                    } else {
+                        cell.text(originalValue);
+                    }
+                });
+
+                input.on("keypress", function (e) {
+                    if (e.which === 13) {
+                        input.blur();
+                    }
+                });
+            });
+
+            function updateParameter(cell, newValue) {
+                var employeeId = cell.data("employee");
+                var paramName = cell.data("param");
+
+                grp.jQuery.ajax({
+                    url: "{% url 'update_employee_parameter' %}",
+                    type: "POST",
+                    data: {
+                        id: employeeId,
+                        param_name: paramName,
+                        param_value: newValue,
+                    },
+                    success: function (response) {
+                        if (response.status !== "success") {
+                            alert("Ошибка: " + response.message);
+                        } else {
+                            let row = table.row(cell.closest("tr"));
+                            let rowData = row.data();
+                            rowData[paramName] = newValue;
+                            row.data(rowData);
+                        }
+                    },
+                    error: function () {
+                        alert("Ошибка на сервере.");
+                    }
+                });
+            }
+
+            if (grp.jQuery("#employees_table thead tr.filters").length === 0) {
+                let filterRow = grp.jQuery("#employees_table tfoot tr").clone().addClass("filters");
+                grp.jQuery("#employees_table thead").append(filterRow);
+                grp.jQuery("#employees_table tfoot").remove();
+            }
+
+            // Добавляем обработчик ввода в поля поиска
+            (function () {
+                let debounceTimer = null;
+
+                grp.jQuery("#employees_table thead input.column-search").on("input", function () {
+                    const $this = grp.jQuery(this);
+                    const colIndex = $this.parent().index();
+
+                    // очистить остальные инпуты (если надо)
+                    grp.jQuery("#employees_table thead input.column-search").each(function (i, el) {
+                        if (i !== colIndex) grp.jQuery(el).val("");
+                    });
+
+                    // один перерис с отменой предыдущего запроса
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => table.ajax.reload(), 500);
+                });
+            })();
+        });
+
+    </script>
+{% endblock %}
+
+{% block content %}
+
+    <!-- 🔹 Filter Panel -->
+
+    <div id="filter-panel">
+        <div class="content">
+            <form method="GET" id="filter-form" class="filter-content">
+                <div class="toggle-handle" onclick="togglePanel()"></div>
+                <div id="filter-container"></div>
+
+                {#                <div id="add-or-group"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v8m-4-4h8m6 0c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z"></path></svg> OR</div>#}
+                <div class="add-group-buttons">
+                    <button type="button" class="add-group-btn" data-logic="or">+ OR group</button>
+                    <button type="button" class="add-group-btn" data-logic="and">+ AND group</button>
+                </div>
+
+
+                <div class="controls">
+                    <button type="button" id="open-advanced-settings">Save & Select</button>
+                    <button type="button" id="view-sql-query">View SQL</button>
+                    <button type="button" class="submit-btn">APPLY</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+            {#получаем sql query#}
+            document.getElementById("view-sql-query").addEventListener("click", () => {
+                const baseUrl = new URL("{% url 'employees_table_data' %}", window.location.origin);
+
+                const groups = document.querySelectorAll(".filter-group");
+                groups.forEach((group, groupIndex) => {
+                    const rows = group.querySelectorAll(".filter-row");
+                    rows.forEach((row, rowIndex) => {
+                        const elements = row.querySelectorAll("select, input");
+                        elements.forEach(el => {
+                            if (el.name && el.value) {
+                                baseUrl.searchParams.append(el.name, el.value);
+                            }
+                        });
+                    });
+                });
+
+                baseUrl.searchParams.set("get_sql_query", "1");
+
+                fetch(baseUrl.toString())
+                    .then(response => response.text())
+                    .then(sql => {
+                        document.getElementById("sql-content").textContent = sql;
+                        document.getElementById("sql-modal").style.display = "block";
+                    });
+            });
+
+            document.querySelector("#sql-modal .close-modal").addEventListener("click", () => {
+                document.getElementById("sql-modal").style.display = "none";
+            });
+
+            document.getElementById("copy-sql-btn").addEventListener("click", () => {
+                const sql = document.getElementById("sql-content").textContent;
+                navigator.clipboard.writeText(sql).then(() => {
+                    {#alert("SQL скопирован");#}
+                });
+            });
+
+
+            const filterContainer = document.getElementById("filter-container");
+            const groupedFields = {{ grouped_fields|safe }};
+
+            function normalizeType(type) {
+                if (["datetime", "date"].includes(type)) return "date";
+                if (["string", "str"].includes(type)) return "str";
+                return type;
+            }
+
+            function updateSubfields(prefixSelect, subfieldSelect, fieldInput, typeSelect) {
+                const selectedPrefix = prefixSelect.value;
+                subfieldSelect.innerHTML = '<option value=""></option>';
+
+                if (selectedPrefix === "tags") {
+                    // single subfield for tags
+                    const option = document.createElement("option");
+                    option.value = "tags__name";
+                    option.textContent = "Tag name";
+                    option.dataset.type = "str";
+                    subfieldSelect.appendChild(option);
+                    return;
+                }
+
+                if (selectedPrefix && groupedFields[selectedPrefix]) {
+                    groupedFields[selectedPrefix].forEach(function (field) {
+                        const option = document.createElement("option");
+                        option.value = field.full;
+                        {#option.textContent = field.field;#}
+                        option.textContent = field.field_trans;
+                        option.dataset.type = normalizeType(field.type);
+                        subfieldSelect.appendChild(option);
+                    });
+                }
+            }
+
+            function createEmptyFilterRow(groupIndex, rowIndex) {
+                const div = document.createElement("div");
+                div.className = "filter-row";
+
+                div.innerHTML = `
+            <button type="button" class="remove">✕</button>
+            <select class="prefix-select">
+                <option value=""></option>
+                {% for key, items in grouped_fields.items %}
+                    <option value="{{ key }}">{{ items.0.prefix_trans }}</option>
+                {% endfor %}
+                <option value="tags">Tags</option>
+            </select>
+            <select class="subfield-select">
+                <option value=""></option>
+            </select>
+            <input type="hidden" name="f__${groupIndex}_${rowIndex}__field" class="field-input">
+            <select name="f__${groupIndex}_${rowIndex}__type" class="filter-type">
+                <option value="str">str</option>
+                <option value="date">date</option>
+            </select>
+            <div class="filter-options"></div>
+        `;
+
+                const prefixSelect = div.querySelector(".prefix-select");
+                const subfieldSelect = div.querySelector(".subfield-select");
+                const fieldInput = div.querySelector(".field-input");
+                const typeSelect = div.querySelector(".filter-type");
+                const filterOptions = div.querySelector(".filter-options");
+
+                const availableSuggestions = {{ value_suggestions|safe }} || {};
+                // ensure tags suggestions exist under predictable keys
+                availableSuggestions["tags__name"] = availableSuggestions["tags__name"] || availableSuggestions["tags"] || [];
+
+
+                subfieldSelect.addEventListener("change", () => {
+                    const selectedOption = subfieldSelect.options[subfieldSelect.selectedIndex];
+                    if (selectedOption) {
+                        const fieldType = normalizeType(selectedOption.dataset.type);
+                        fieldInput.value = selectedOption.value;
+                        typeSelect.value = fieldType;
+                        typeSelect.dispatchEvent(new Event("change"));
+                    }
+                });
+
+                prefixSelect.addEventListener("change", () => {
+                    updateSubfields(prefixSelect, subfieldSelect, fieldInput, typeSelect);
+                });
+
+                bindRemove(div);
+
+                const updateOptions = () => {
+                    const ftype = typeSelect.value;
+                    filterOptions.innerHTML = "";
+
+                    if (ftype === "date") {
+                        filterOptions.innerHTML = `
+                    <select name="f__${groupIndex}_${rowIndex}__operator" class="operator">
+                        <option value="range">range</option>
+                        <option value="more_then_days">more then days</option>
+                        <option value="less_then_days">less then days</option>
+                        <option value="is empty">is empty</option>
+                        <option value="is not empty">is not empty</option>
+                    </select>
+                    <div class="value-inputs"></div>
+                `;
+                        const opSelect = filterOptions.querySelector(".operator");
+                        const valueInputs = filterOptions.querySelector(".value-inputs");
+
+                        const updateDateInputs = () => {
+                            const op = opSelect.value;
+                            valueInputs.innerHTML = "";
+                            if (op === "range") {
+                                valueInputs.innerHTML = `
+                            <input type="text" autocomplete="off" name="f__${groupIndex}_${rowIndex}__value_from" placeholder="From">
+                            <input type="text" autocomplete="off" name="f__${groupIndex}_${rowIndex}__value_to" placeholder="To">
+                        `;
+                                grp.jQuery(valueInputs).find("input").datepicker({dateFormat: "yy-mm-dd"});
+                            } else if (["more_then_days", "less_then_days"].includes(op)) {
+                                valueInputs.innerHTML = `<input type="number" autocomplete="off" name="f__${groupIndex}_${rowIndex}__value" placeholder="Days from now">`;
+                            }
+                        };
+
+                        opSelect.addEventListener("change", updateDateInputs);
+                        updateDateInputs();
+
+                    } else {
+                        const datalistId = `suggestions_f__${groupIndex}_${rowIndex}`;
+                        const currentField = fieldInput.value;
+
+                        const suggestions = availableSuggestions[currentField] || [];
+
+                        filterOptions.innerHTML = `
+                    <select name="f__${groupIndex}_${rowIndex}__operator">
+                        <option value="equals">equals</option>
+                        <option value="not_equals">not equals</option>
+                        <option value="icontains">contains</option>
+                        <option value="not_icontains">not contains</option>
+                        <option value="is empty">is empty</option>
+                        <option value="is not empty">is not empty</option>
+                        <option value="more">more</option>
+                        <option value="less">less</option>
+                    </select>
+                    <input type="text" name="f__${groupIndex}_${rowIndex}__value"
+                        autocomplete="off"
+                        placeholder="Value"
+                        ${suggestions.length ? `list="${datalistId}"` : ""}>
+                    ${suggestions.length ? `<datalist id="${datalistId}">${suggestions.map(v => `<option value="${v}">`).join("")}</datalist>` : ""}
+                `;
+                    }
+                };
+
+                typeSelect.addEventListener("change", updateOptions);
+                updateOptions();
+
+                return div;
+            }
+
+            function bindRemove(div) {
+                div.querySelector(".remove").addEventListener("click", () => div.remove());
+            }
+
+            function addFilterGroupWithLogic(logic = "or", autoAdd = true) {
+                const groupDiv = document.createElement("div");
+                groupDiv.className = "filter-group";
+                groupDiv.innerHTML = `
+            <div class="group-body"></div>
+            <div class="group-controls">
+                <div class="add-filter">+ AND</div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="remove-group"><path stroke-linecap="round" stroke-linejoin="round" d="M16 6v-.8c0-1.12 0-1.68-.218-2.108a2 2 0 00-.874-.874C14.48 2 13.92 2 12.8 2h-1.6c-1.12 0-1.68 0-2.108.218a2 2 0 00-.874.874C8 3.52 8 4.08 8 5.2V6M3 6h18m-2 0v11.2c0 1.68 0 2.52-.327 3.162a3 3 0 01-1.311 1.311C16.72 22 15.88 22 14.2 22H9.8c-1.68 0-2.52 0-3.162-.327a3 3 0 01-1.311-1.311C5 19.72 5 18.88 5 17.2V6"/></svg>
+            </div>
+        `;
+
+                // 👉 Добавляем hidden input с типом соединения группы
+                const groupIndex = [...filterContainer.querySelectorAll(".filter-group")].length;
+                const logicInput = document.createElement("input");
+                logicInput.type = "hidden";
+                logicInput.name = `f__${groupIndex}__group_logic`;
+                logicInput.value = logic;
+                groupDiv.appendChild(logicInput);
+
+                const logicStyleElement = document.createElement("div");
+                logicStyleElement.textContent = logic.toUpperCase();
+                logicStyleElement.classList.add("style_for");
+                groupDiv.appendChild(logicStyleElement);
+
+                filterContainer.appendChild(groupDiv);
+                const groupBody = groupDiv.querySelector(".group-body");
+
+                groupDiv.querySelector(".add-filter").addEventListener("click", () => {
+                    const rowIndex = groupBody.querySelectorAll(".filter-row").length;
+                    const row = createEmptyFilterRow(groupIndex, rowIndex);
+                    groupBody.appendChild(row);
+                });
+
+                groupDiv.querySelector(".remove-group").addEventListener("click", () => groupDiv.remove());
+
+                if (autoAdd) groupDiv.querySelector(".add-filter").click();
+
+                return groupDiv;
+            }
+
+
+            {#document.getElementById("add-or-group").addEventListener("click", () => addFilterGroup());#}
+            document.querySelectorAll(".add-group-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const logic = btn.dataset.logic;
+                    addFilterGroupWithLogic(logic);
+                });
+            });
+
+            document.querySelector(".submit-btn").addEventListener("click", function () {
+                const form = document.createElement("form");
+                form.method = "GET";
+                form.style.display = "none";
+
+                const groups = document.querySelectorAll(".filter-group");
+                groups.forEach((group, groupIndex) => {
+                    // 🔹 Добавляем group_logic один раз на группу
+                    const logicInput = group.querySelector(`input[name="f__${groupIndex}__group_logic"]`);
+                    if (logicInput) {
+                        const hidden = document.createElement("input");
+                        hidden.type = "hidden";
+                        hidden.name = logicInput.name;
+                        hidden.value = logicInput.value;
+                        form.appendChild(hidden);
+                    }
+
+                    // 🔹 Перебираем все строки внутри группы
+                    const rows = group.querySelectorAll(".filter-row");
+                    rows.forEach((row, rowIndex) => {
+                        const elements = row.querySelectorAll("select, input");
+                        elements.forEach(el => {
+                            const hidden = document.createElement("input");
+                            hidden.type = "hidden";
+                            hidden.name = el.name;
+                            hidden.value = el.value;
+                            form.appendChild(hidden);
+                        });
+                    });
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+
+            const params = new URLSearchParams(window.location.search);
+            const grouped = {};
+
+            for (const [key, value] of params.entries()) {
+                const match = key.match(/^f__(\d+)_(\d+)__(.+)$/);
+                if (!match) continue;
+                const [_, gIndex, rIndex, base] = match;
+                grouped[gIndex] = grouped[gIndex] || {};
+                grouped[gIndex][rIndex] = grouped[gIndex][rIndex] || {};
+                grouped[gIndex][rIndex][base] = value;
+            }
+
+            for (const [gIndex, rows] of Object.entries(grouped)) {
+                const groupLogic = params.get(`f__${gIndex}__group_logic`) || "and";
+                const group = addFilterGroupWithLogic(groupLogic, false);
+                const groupBody = group.querySelector(".group-body");
+
+                const sortedRowIndexes = Object.keys(rows).sort((a, b) => +a - +b);
+                sortedRowIndexes.forEach(rIndex => {
+                    const data = rows[rIndex];
+                    const row = createEmptyFilterRow(gIndex, rIndex);
+                    groupBody.appendChild(row);
+
+                    const field = data["field"] || "";
+                    const rawType = data["type"] || "str";
+                    const type = normalizeType(rawType);
+                    const operator = data["operator"] || "";
+                    const value = data["value"] || "";
+                    const value_from = data["value_from"] || "";
+                    const value_to = data["value_to"] || "";
+
+                    const fieldInput = row.querySelector(`input[name="f__${gIndex}_${rIndex}__field"]`);
+                    const typeSelect = row.querySelector(`select[name="f__${gIndex}_${rIndex}__type"]`);
+
+                    fieldInput.value = field;
+                    typeSelect.value = type;
+                    typeSelect.disabled = true;
+                    typeSelect.dispatchEvent(new Event("change"));
+
+                    setTimeout(() => {
+                        const operatorSelect = row.querySelector(`select[name="f__${gIndex}_${rIndex}__operator"]`);
+                        if (operatorSelect) {
+                            operatorSelect.value = operator;
+                            operatorSelect.dispatchEvent(new Event("change"));
+                        }
+
+                        setTimeout(() => {
+                            const valueInput = row.querySelector(`input[name="f__${gIndex}_${rIndex}__value"]`);
+                            const fromInput = row.querySelector(`input[name="f__${gIndex}_${rIndex}__value_from"]`);
+                            const toInput = row.querySelector(`input[name="f__${gIndex}_${rIndex}__value_to"]`);
+
+                            if (valueInput) valueInput.value = value;
+                            if (fromInput) fromInput.value = value_from;
+                            if (toInput) toInput.value = value_to;
+                        }, 10);
+                    }, 10);
+
+                    const prefixSelect = row.querySelector(".prefix-select");
+                    const subfieldSelect = row.querySelector(".subfield-select");
+
+                    const parts = field.split("__");
+                    const prefix = parts[0];
+
+                    if (groupedFields[prefix]) {
+                        prefixSelect.value = prefix;
+                        updateSubfields(prefixSelect, subfieldSelect, fieldInput, typeSelect);
+                        setTimeout(() => {
+                            const option = [...subfieldSelect.options].find(o => o.value === field);
+                            if (option) {
+                                subfieldSelect.value = option.value;
+                                fieldInput.value = option.value;
+                                typeSelect.value = option.dataset.type;
+                                typeSelect.dispatchEvent(new Event("change"));
+                            }
+                        }, 0);
+                    } else if (prefix === "tags") {
+                        prefixSelect.value = "tags";
+                        updateSubfields(prefixSelect, subfieldSelect, fieldInput, typeSelect);
+                        setTimeout(() => {
+                            const option = [...subfieldSelect.options].find(o => o.value === field);
+                            if (option) {
+                                subfieldSelect.value = option.value;
+                                fieldInput.value = option.value;
+                                typeSelect.value = option.dataset.type || "str";
+                                typeSelect.dispatchEvent(new Event("change"));
+                            } else {
+                                // fallback if value was "tags" without subfield
+                                fieldInput.value = "tags__name";
+                                typeSelect.value = "str";
+                                typeSelect.dispatchEvent(new Event("change"));
+                            }
+                        }, 0);
+                    }
+                });
+            }
+            if (Object.keys(grouped).length === 0) {
+                addFilterGroupWithLogic("and", true);
+            }
+        });
+
+
+    </script>
+
+
+
+
+    <script>
+        // ===========================
+        // 🔽 TOGGLE FILTER PANEL
+        // ===========================
+        const panel = document.getElementById("filter-panel");
+        let isOpen = localStorage.getItem("panelOpen") === "true";
+
+        // Установка состояния при загрузке
+        if (isOpen) {
+            panel.classList.add("open");
+        } else {
+        }
+
+        function togglePanel() {
+            if (isOpen) {
+                panel.classList.remove("open");
+                panel.addEventListener("transitionend", onClose, {once: true});
+            } else {
+                panel.classList.add("open");
+                panel.addEventListener("transitionend", onOpen, {once: true});
+            }
+
+            isOpen = !isOpen;
+            localStorage.setItem("panelOpen", isOpen);
+        }
+
+        function onOpen() {
+        }
+
+        function onClose() {
+        }
+
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // ========== SETTINGS MODAL ==========
+
+            const settingsModal = document.getElementById("settings-modal");
+            const openSettingsBtn = document.getElementById("open-settings");
+            const closeSettingsBtn = settingsModal.querySelector(".close-modal");
+            const contactsList = document.getElementById("contacts-list");
+            let settingsChanged = false;
+
+            openSettingsBtn.addEventListener("click", () => {
+                fetch("{% url 'columns_settings_json' %}?type=EMPLOYEES_AJAX")
+                    .then(res => res.json())
+                    .then(data => {
+                        contactsList.innerHTML = "";
+                        data.forEach(setting => {
+                            const li = document.createElement("li");
+                            li.classList.add("contact-item");
+                            li.dataset.name = setting.field_name;
+                            li.innerHTML = `
+                            <input type="checkbox" class="visibility-toggle" ${setting.visible ? "checked" : ""}>
+                            ${setting.field_name}
+                        `;
+                            contactsList.appendChild(li);
+                        });
+
+                        new Sortable(contactsList, {
+                            animation: 150,
+                            scroll: true,
+                            scrollSensitivity: 80,
+                            scrollSpeed: 100,
+                            onEnd: () => settingsChanged = true
+                        });
+
+                        document.querySelectorAll(".visibility-toggle").forEach(input => {
+                            input.addEventListener("change", () => settingsChanged = true);
+                        });
+
+                        settingsModal.classList.add("open");
+                    })
+                    .catch(err => console.error("Settings load error:", err));
+            });
+
+            closeSettingsBtn.addEventListener("click", () => {
+                settingsModal.classList.remove("open");
+                if (settingsChanged) saveSettings();
+            });
+
+            function saveSettings() {
+                const visibleFields = Array.from(document.querySelectorAll(".contact-item"))
+                    .filter(item => item.querySelector(".visibility-toggle").checked)
+                    .map(item => item.dataset.name);
+
+                fetch("{% url 'update_columns_settings' %}?type=EMPLOYEES_AJAX", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({columns_settings: visibleFields})
+                })
+                    .then(res => res.json())
+                    .then(() => location.reload())
+                    .catch(err => console.error("Settings save error:", err));
+            }
+
+            document.getElementById("select-all").addEventListener("click", () => {
+                document.querySelectorAll(".visibility-toggle").forEach(i => i.checked = true);
+                settingsChanged = true;
+            });
+
+            document.getElementById("deselect-all").addEventListener("click", () => {
+                document.querySelectorAll(".visibility-toggle").forEach(i => i.checked = false);
+                settingsChanged = true;
+            });
+
+            document.getElementById("sort-alpha").addEventListener("click", () => {
+                const items = Array.from(contactsList.querySelectorAll(".contact-item"));
+                items.sort((a, b) => a.dataset.name.localeCompare(b.dataset.name));
+                items.forEach(i => contactsList.appendChild(i));
+                settingsChanged = true;
+            });
+
+            // ========== SAVED FILTERS MODAL ==========
+
+            const filtersModal = document.getElementById("advanced-settings-modal");
+            const openFiltersBtn = document.getElementById("open-advanced-settings");
+            const closeFiltersBtn = filtersModal.querySelector(".close-modal");
+            const filtersList = document.getElementById("filters-list");
+            const saveFilterBtn = document.getElementById("save-filter");
+            const filterNameInput = document.getElementById("filter-name");
+
+            openFiltersBtn.addEventListener("click", () => {
+                fetch("/admin/saved-filters/")
+                    .then(res => res.json())
+                    .then(data => {
+                        filtersList.innerHTML = "";
+                        data.forEach(filter => {
+                            const li = document.createElement("li");
+                            li.classList.add("filter-item");
+                            li.dataset.id = filter.id;
+                            li.innerHTML = `
+                            <button class="delete-filter">⛌</button>
+                            <a href="?${filter.params}" class="filter-name">${filter.name}</a>
+                        `;
+                            filtersList.appendChild(li);
+                        });
+
+                        filtersList.querySelectorAll(".delete-filter").forEach(btn => {
+                            btn.addEventListener("click", function () {
+                                const filterItem = this.closest(".filter-item");
+                                const filterId = filterItem.dataset.id;
+
+                                fetch("/admin/saved-filters/", {
+                                    method: "DELETE",
+                                    headers: {"Content-Type": "application/json"},
+                                    body: JSON.stringify({id: filterId})
+                                })
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (data.status === "success") {
+                                            filterItem.remove();
+                                        } else {
+                                            alert("Deletion error");
+                                        }
+                                    });
+                            });
+                        });
+
+                        filtersModal.classList.add("open");
+                    });
+            });
+
+            closeFiltersBtn.addEventListener("click", () => {
+                filtersModal.classList.remove("open");
+            });
+
+            saveFilterBtn.addEventListener("click", () => {
+                const filterName = filterNameInput.value.trim();
+                if (!filterName) return alert("Enter filter name!");
+
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.append("name", filterName);
+
+                fetch("/admin/saved-filters/", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: urlParams.toString()
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === "success") location.reload();
+                        else alert("Filter save error");
+                    });
+            });
+        });
+    </script>
+
+    <script>
+        // для открытия модали "students"
+        document.addEventListener("DOMContentLoaded", function () {
+            // Глобальный слушатель: закрыть любую нашу модалку по postMessage
+            window.addEventListener("message", function (ev) {
+                if (ev && ev.data && ev.data.type === "inline-saved") {
+                    document.querySelectorAll('div[data-inline-modal="1"]').forEach(n => n.remove());
+                }
+            });
+
+            (function () {
+                function openModalWithIframe(url, fragmentSelector) {
+                    var overlay = document.createElement("div");
+                    overlay.setAttribute("data-inline-modal", "1");  // NEW
+                    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;";
+                    var modal = document.createElement("div");
+                    modal.style.cssText = "background:#fff;width:90vw;height:80vh;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.4);";
+                    var close = document.createElement("button");
+                    close.textContent = "×";
+                    close.title = "Close";
+                    close.style.cssText = "position:absolute;right:12px;top:0;font-size:42px;line-height:1;background:transparent;border:0;cursor:pointer;color:gray;";
+                    var iframe = document.createElement("iframe");
+                    iframe.src = url;
+                    iframe.style.cssText = "width:100%;height:100%;border:0;";
+
+                    var pendingSave = false;
+
+                    function closeModal() {
+                        try {
+                            document.body.removeChild(overlay);
+                        } catch (e) {
+                        }
+                    }
+
+                    close.addEventListener("click", function () {
+                        closeModal();
+                    });
+                    modal.appendChild(close);
+                    modal.appendChild(iframe);
+                    overlay.appendChild(modal);
+                    document.body.appendChild(overlay);
+
+                    iframe.addEventListener("load", function () {
+                        var win, doc;
+                        try {
+                            win = iframe.contentWindow;
+                            doc = win.document;
+                        } catch (e) {
+                            return;
+                        }
+
+                        // CSS маска
+                        var style = doc.getElementById("modal-inline-style");
+                        if (!style) {
+                            style = doc.createElement("style");
+                            style.id = "modal-inline-style";
+                            style.textContent = `
+            body { scale: 1; }
+            body > *:not(#container) { display: none !important; }
+            #container > *:not(#grp-content) { display: none !important; }
+            #grp-content { padding: 20px 20px 10px; }
+            #grp-content-title { display: none !important; }
+            #grp-content-container > *:not(form) { display: none !important; }
+            #grp-content-container form > *:not(div) { display: none !important; }
+            #student_entries-group { display: block !important; }
+            footer.grp-submit-row { display: block !important; position: sticky; bottom: 0; }
+            footer.grp-submit-row input[name="_addanother"],
+            footer.grp-submit-row input[name="_continue"] { display: none !important; }
+            .grp-table { max-width: 100%; overflow:auto; }
+          `;
+                            doc.head.appendChild(style);
+                        }
+
+                        // NEW: добавляем скрытый флаг в форму, чтобы сервер знал, что это inline-модалка
+                        var form = doc.querySelector("form");
+                        if (form && !form.__inlineFlagged) {
+                            var hidden = doc.createElement("input");
+                            hidden.type = "hidden";
+                            hidden.name = "inline";
+                            hidden.value = "students";
+                            form.appendChild(hidden);
+                            form.addEventListener("submit", function () {
+                                pendingSave = true;
+                            }, true);
+                            form.__inlineFlagged = true;
+                        }
+
+                        // Если пытаешься закрывать по эвристикам без серверного postMessage:
+                        if (pendingSave) {
+                            var hasErrors =
+                                doc.querySelector(".errorlist, .errors, .grp-errors, .invalid, [aria-invalid='true']");
+                            var formStillHere = !!doc.querySelector("form");
+                            var hasSuccessMsg =
+                                doc.querySelector(".messagelist .success, .grp-messages .success, .success");
+
+                            if (!hasErrors && (!formStillHere || hasSuccessMsg)) {
+                                // оставлю на случай если серверный хук не подключён
+                                closeModal();
+                                return;
+                            } else {
+                                pendingSave = false;
+                            }
+                        }
+
+                        var target = doc.querySelector(fragmentSelector || "#student_entries-group");
+                        if (target && target.scrollIntoView) target.scrollIntoView({block: "start"});
+                    });
+                }
+
+                document.addEventListener("click", function (e) {
+                    var a = e.target.closest("a.js-inline-modal");
+                    if (!a) return;
+                    e.preventDefault();
+                    openModalWithIframe(a.href, a.getAttribute("data-fragment") || "#student_entries-group");
+                });
+            })();
+        });
+    </script>
+
+
+
+    <!-- 🔹 Modal Window for Additional Settings -->
+    <div id="advanced-settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            {#            <h5>Saved filters</h5>#}
+            <br>
+
+            <div class="modal-body">
+                <div class="filter-input-container">
+                    <input type="text" id="filter-name" placeholder="Filter name" autocomplete="off">
+                    <button class="modal-content-button" type="button" id="save-filter">Save</button>
+                </div>
+
+                <div id="saved-filters">
+                    <br>
+                    <label>Saved filters:</label>
+                    <ul id="filters-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#    {% if request.user.is_superuser %}#}
+    <div id="open-settings">View settings..</div>
+    <a href="{% url "add_employee" %}" class="add-emp">➕ Add contact</a>
+    <div style="color: #0c5460; position: absolute; left: 260px; top: 4px;">
+        <strong>💡 Tip:</strong> Hold <kbd style="background: #fff; padding: 2px 6px; border-radius: 3px; border: 1px solid #ccc; color: #4d4d4d;">Shift</kbd> and click column headers to sort by multiple columns.
+    </div>
+    {#    {% endif %}#}
+
+    <table id="employees_table" class="display">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h5>Columns..</h5>
+            <div class="modal-body">
+                <div>
+                    <button class="modal-content-button" id="select-all">Select All</button>
+                    <button class="modal-content-button" id="deselect-all">Deselect All</button>
+                    <button class="modal-content-button" id="sort-alpha">Sort A-Z</button>
+                </div>
+                <ul id="contacts-list"></ul>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="sql-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h5>SQL Query</h5>
+            <pre id="sql-content"
+                 style="white-space: pre-wrap; max-height: 400px; overflow-y: auto; background: #f4f4f4; padding: 10px; border: 1px solid #ccc;"></pre>
+            <button class="modal-content-button" id="copy-sql-btn">Copy</button>
+        </div>
+    </div>
+
+{% endblock %}

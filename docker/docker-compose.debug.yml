@@ -1,0 +1,42 @@
+services:
+  web:
+#    command: >
+#      bash -lc "python -m debugpy --listen 0.0.0.0:5678 --wait-for-client manage.py runserver 0.0.0.0:8000 --noreload"
+#    command:
+#      - bash
+#      - -lc
+#      - python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 --wait-for-client manage.py runserver 0.0.0.0:8000 --noreload
+    # было (debug wait)
+#    command:
+#      - bash
+#      - -lc
+#      - python -m debugpy --listen 0.0.0.0:5678 --wait-for-client manage.py runserver 0.0.0.0:8000 --noreload
+
+    # станет (не ждём, но debugpy всё ещё слушает — можно подключиться позже)
+#    command:
+#      - bash
+#      - -lc
+#      - python -m debugpy --listen 0.0.0.0:5678 manage.py runserver 0.0.0.0:8000 --noreload
+
+#    command:
+#      - bash
+#      - -lc
+#      - python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 manage.py runserver 0.0.0.0:8000 --noreload
+
+    # или вообще без debugpy (обычный запуск)
+#    command:
+#      - bash
+#      - -lc
+#      - python manage.py runserver 0.0.0.0:8000
+
+
+    command:
+      - bash
+      - -lc
+      - python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 manage.py runserver 0.0.0.0:8000
+    ports:
+      - "5678:5678"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYDEVD_DISABLE_FILE_VALIDATION=1
+    # volumes и прочее берутся из основного compose через merge

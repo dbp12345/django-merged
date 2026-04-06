@@ -1,0 +1,108 @@
+{% extends "pwa_crwb/base.html" %}
+{% load static %}
+
+{% block style %}
+    <style>
+        .main-container {
+            max-width: inherit;
+            overflow-x: auto;
+            margin-top: 35px;
+        }
+
+        .main-container a{
+            display: inline-block;
+        }
+
+        .content-bg h2 {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            position: inherit;
+            z-index: 5;
+        }
+
+        .content-bg h2 a {
+            color: whitesmoke;
+            text-decoration: none;
+            padding: 0 15px;
+            opacity: .8;
+        }
+
+        .content-bg h2 a.active {
+            text-decoration: underline;
+            color: whitesmoke;
+            opacity: 1;
+        }
+
+        .card hr {
+            width: 65px;
+            border: 1px dashed rgba(255, 87, 34, 0.35);
+        }
+
+        a.pdf-thumb {
+            height: 0;
+            margin: 0;
+            padding: 5px 0 0 0;
+        }
+    </style>
+{% endblock %}
+{% block title %}Dispatch{% endblock %}
+{% block employee %}
+    {% if employee %}<a href="{% url 'pwa_crwb_crew' %}">{{ employee.first_name }} {{ employee.last_name }} <i>({{ employee.email }})</i></a>{% endif %}
+{% endblock %}
+
+{% block hero %}
+    <div id="overlay" style="display:none;"></div>
+    <section class="content-bg">
+        <h2>
+            <a href="{% url 'pwa_crwb_crew' %}">Crew</a>
+            <a href="{% url 'pwa_crwb_dispatch' %}">Dispatch</a>
+            <a class="active" href="{% url 'pwa_crwb_mspa' %}">MSPA</a>
+        </h2>
+
+        <div class="main-container">
+            {% for c in cards %}
+                <div class="card">
+                    <hr>
+                    <div class="hdr">
+                        <div class="meta">
+                            <span>{{ c.name }}</span><br/>
+                            <span>{{ c.email }}</span>
+                        </div>
+                    </div>
+
+                    <a class="pdf-thumb" href="{{ c.file_url }}" target="_blank" rel="noreferrer noopener" data-pdf="{{ c.file_url }}">
+                        <canvas width="200" height="0"></canvas>
+                    </a>
+                </div>
+            {% empty %}
+                <p>This crew has no employees with an MSPA document.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <script src="{% static 'pdf/pdf.min.js' %}"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "{% static 'pdf/pdf.worker.min.js' %}";
+
+        document.querySelectorAll('.pdf-thumb').forEach(async link => {
+            const url = link.dataset.pdf;
+            const canvas = link.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const desiredWidth = canvas.width;
+                const viewport = page.getViewport({scale: 1});
+                const scale = desiredWidth / viewport.width;
+                const vp = page.getViewport({scale});
+
+                canvas.height = vp.height;
+                await page.render({canvasContext: ctx, viewport: vp}).promise;
+            } catch (e) {
+                console.error('PDF thumbnail error:', e);
+            }
+        });
+    </script>
+{% endblock %}

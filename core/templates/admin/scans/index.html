@@ -1,0 +1,43 @@
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: sans-serif;
+    }
+
+    th, td {
+        border: 1px solid #ccc;
+        padding: 6px 10px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    td.beacons {
+        font-family: monospace;
+    }
+</style>
+<table>
+    <thead>
+    <tr>
+        {#<th>#</th>#}
+        <th>Beacons</th>
+        <th>Duration (min)</th>
+        <th>Start</th>
+        <th>End</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for visit in res %}
+        <tr>
+            {#<td>{{ forloop.counter }}</td>#}
+            <td class="beacons">{{ visit.beacons|join:", " }}</td>
+            <td>{{ visit.duration|floatformat:0 }}</td>
+            <td>{{ visit.start_time }}</td>
+            <td>{{ visit.end_time }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

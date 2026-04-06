@@ -1,0 +1,23 @@
+.inline-group .grp-collapse-handler {
+    cursor: pointer;
+}
+
+.inline-group {
+    max-height: inherit;
+    overflow: hidden;
+    /*animation: openExpand 0.5s ease forwards;*/
+}
+
+.inline-group.closed {
+    max-height: 30px;
+    /*animation: none;*/
+}
+
+@keyframes openExpand {
+    from {
+        max-height: 30px;
+    }
+    to {
+        max-height: inherit;
+    }
+}

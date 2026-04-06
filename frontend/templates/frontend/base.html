@@ -1,0 +1,49 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dust Busters{% endblock %}</title>
+
+    {#    <link rel="stylesheet" href="/static/css/styles.css">#}
+    <link href="{% static 'frontend/css/styles.css' %}" rel="stylesheet"/>
+    {#    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>#}
+    {% block style %}{% endblock %}
+</head>
+<body>
+<div class="hero-section">
+    <div class="overlay">
+        <nav class="navbar">
+            <a href="{% url 'main' %}" class="logo">Dust Busters</a>
+            <ul class="nav-links">
+{#                {% if request.user.is_authenticated and request.user.is_staff %}#}
+{#                {% endif %}#}
+                <li><a href="{% url 'pwa_punches_form' %}">Attendance</a></li>
+                <li><a href="{% url 'pwa' %}">PWA</a></li>
+                <li><a href="{% url 'front_documentation' slug='api' %}">Api</a></li>
+                <li><a href="{% url 'front_documentation' slug='manual' %}">Manual</a></li>
+                {% if request.user.is_authenticated and request.user.is_staff %}
+                    <li><a href="{% url 'resources' %}">Resources</a></li>
+                    <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                {% endif %}
+                {% if request.user.is_authenticated %}
+                    <li><a href="{% url 'cabinet' %}">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="tnb-sign-in-icon">
+                            <path d="M7 7C8.933 7 10.5 5.433 10.5 3.5C10.5 1.567 8.933 0 7 0C5.067 0 3.5 1.567 3.5 3.5C3.5 5.433 5.067 7 7 7ZM9.33333 3.5C9.33333 4.78866 8.28866 5.83333 7 5.83333C5.71134 5.83333 4.66667 4.78866 4.66667 3.5C4.66667 2.21134 5.71134 1.16667 7 1.16667C8.28866 1.16667 9.33333 2.21134 9.33333 3.5Z"
+                                  fill="white"></path>
+                            <path d="M14 12.8333C14 14 12.8333 14 12.8333 14H1.16667C1.16667 14 0 14 0 12.8333C0 11.6667 1.16667 8.16667 7 8.16667C12.8333 8.16667 14 11.6667 14 12.8333ZM12.8333 12.8293C12.8316 12.5414 12.6539 11.6789 11.8625 10.8875C11.1016 10.1265 9.67062 9.33333 6.99999 9.33333C4.32936 9.33333 2.89841 10.1265 2.13745 10.8875C1.34605 11.6789 1.16833 12.5414 1.16667 12.8293H12.8333Z"
+                                  fill="white"></path>
+                        </svg>
+                        {{ request.user.username }}</a></li>
+                {% else %}
+                    <li><a href="{% url 'login' %}">Login</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% block hero %}{% endblock %}
+    </div>
+</div>
+</body>
+</html>

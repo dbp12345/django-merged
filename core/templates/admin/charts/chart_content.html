@@ -1,0 +1,341 @@
+{% load static %}
+<script type="text/javascript" src="{% static 'npm/chart.js' %}"></script>
+{#        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>#}
+<script type="text/javascript" src="{% static 'npm/chartjs-plugin-datalabels.js' %}"></script>
+
+{% if dashboard is False %}
+    <style>
+        .filter-panel {
+            width: 250px;
+            padding: 10px;
+            margin-right: 75px;
+            margin-top: 20px;
+            float: left;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-panel select, .filter-panel input {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .filter-panel button {
+            width: 100%;
+            padding: 7px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: inherit;
+            height: inherit;
+        }
+
+        .filter-panel button:hover {
+            background: #0056b3;
+        }
+
+        .canvas-wrap {
+            position: relative;
+            width: 40%;
+            float: left;
+            padding: 0 4% 2%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 10px;
+        }
+
+        .info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .canvas-wrap .control-btn {
+            position: absolute;
+            float: right;
+            bottom: 55px;
+            right: 120px;
+        }
+
+        .canvas-wrap .control-btn a{
+            padding: 0 10px;
+        }
+
+        .add-btn {
+            float: right;
+            background: lightcyan;
+            border-radius: 5px;
+            padding: 5px 15px;
+            margin-top: -20px;
+        }
+    </style>
+{% endif %}
+
+
+{% if saved_charts is None %}
+    <div class="filter-panel">
+        {#            <h4>Filters:</h4>#}
+        {#            <br>#}
+
+        {#            <label>Name:</label>#}
+        {#            <input type="text" id="displayName" placeholder="">#}
+
+        <label>Courses:</label>
+        <select id="courseSelect">
+            <option value="">All Courses</option>
+            {% for course in courses %}
+                <option value="{{ course.id }}" data-title="{{ course.training_type__name }}"
+                        {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+                    {{ course.training_type__name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Type:</label>
+        <select id="typeSelect">
+            <option value="data" {% if selected_chart_type == "data" %}selected{% endif %}>Data Chart</option>
+            <option value="cumulative" {% if selected_chart_type == "cumulative" %}selected{% endif %}>Cumulative Chart</option>
+        </select>
+
+        <label>Year from:</label>
+        <select id="yearFromSelect">
+            <option value="">Year From</option>
+            {% for year in available_years %}
+                <option value="{{ year }}" {% if selected_year_from == year|stringformat:"s" %}selected{% endif %}>
+                    {{ year }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Year to:</label>
+        <select id="yearToSelect">
+            <option value="">Year To</option>
+            {% for year in available_years %}
+                <option value="{{ year }}" {% if selected_year_to == year|stringformat:"s" %}selected{% endif %}>
+                    {{ year }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Type:</label>
+        <select id="chartTypeSelect">
+            <option value="bar" {% if selected_chart_type == "bar" %}selected{% endif %}>Bar Chart</option>
+            <option value="line" {% if selected_chart_type == "line" %}selected{% endif %}>Line Chart</option>
+        </select>
+
+
+        <label>Order:</label>
+        <input type="number" id="displayOrder" placeholder="">
+
+        <label>Show on Dashboard:</label>
+        <select id="dashboardSelect">
+            <option value="false" {% if not selected_dashboard %}selected{% endif %}>No</option>
+            <option value="true" {% if selected_dashboard %}selected{% endif %}>Yes</option>
+        </select>
+
+
+        <input type="hidden" id="chartId" value="{{ saved_chart.id }}">
+
+        <button id="saveChartBtn">Save chart</button>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas data-chart-id="temp"></canvas>
+    </div>
+{% else %}
+    {% if dashboard is False %}
+        <div>
+            <a class="add-btn" href="/admin/metrics-charts-settings/">Add</a>
+        </div>
+    {% endif %}
+    {% for chart in saved_charts %}
+        <div class="canvas-wrap">
+            <canvas data-chart-id="{{ chart.id }}" data-course-id="{{ chart.course_id }}"
+                    data-year-from="{{ chart.year_from }}" data-year-to="{{ chart.year_to }}"
+                    data-chart-type="{{ chart.chart_type }}" data-chart-name="{{ chart.name }}" data-data-type="{{ chart.data_type }}"></canvas>
+            {% if dashboard is False %}
+                <span class="info">
+                    <strong>Order:</strong> {{ chart.display_order }} |
+                    <strong>Dashboard:</strong>
+                    {% if chart.dashboard %}
+                        <span style="color: green; font-weight: bold;">✔ Yes</span>
+                    {% else %}
+                        <span style="color: red; font-weight: bold;">✖ No</span>
+                    {% endif %}
+                </span>
+                <span class="control-btn">
+                    <a href="/admin/metrics-charts-settings/{{ chart.id }}/">📝 Edit</a>
+                    <a href="{% url 'delete_chart' chart.id %}">🗑 Delete</a>
+                </span>
+            {% endif %}
+        </div>
+    {% endfor %}
+{% endif %}
+
+
+<script>
+    grp.jQuery(document).ready(function () {
+        function updateChart(canvasElement) {
+            let chartId = grp.jQuery(canvasElement).data("chart-id");
+            let courseId = grp.jQuery("#courseSelect").val() || grp.jQuery(canvasElement).data("course-id") || "";
+            let yearFrom = grp.jQuery("#yearFromSelect").val() || grp.jQuery(canvasElement).data("year-from") || "";
+            let yearTo = grp.jQuery("#yearToSelect").val() || grp.jQuery(canvasElement).data("year-to") || "";
+            let chartType = grp.jQuery("#chartTypeSelect").val() || grp.jQuery(canvasElement).data("chart-type") || "bar";
+            let typeSelect = grp.jQuery("#typeSelect").val() || grp.jQuery(canvasElement).data("data-type") || "data";
+
+            // Если график временный, обновляем его параметры
+            if (chartId === "temp") {
+                grp.jQuery(canvasElement).data("course-id", courseId);
+                grp.jQuery(canvasElement).data("year-from", yearFrom);
+                grp.jQuery(canvasElement).data("year-to", yearTo);
+                grp.jQuery(canvasElement).data("chart-type", chartType);
+                grp.jQuery(canvasElement).data("data-type", typeSelect);
+            }
+
+            fetch(`/admin/metrics-charts-data/?course_id=${courseId}&year_from=${yearFrom}&year_to=${yearTo}&data_type=${typeSelect}`)
+                .then(response => response.json())
+                .then(data => {
+                    const colorOptions = [
+                        {background: "rgba(255, 99, 132, 0.6)", border: "rgba(255, 99, 132, 1)"},
+                        {background: "rgba(54, 162, 235, 0.6)", border: "rgba(54, 162, 235, 1)"},
+                        {background: "rgba(75, 192, 192, 0.6)", border: "rgba(75, 192, 192, 1)"},
+                        {background: "rgba(255, 206, 86, 0.6)", border: "rgba(255, 206, 86, 1)"},
+                        {background: "rgba(153, 102, 255, 0.6)", border: "rgba(153, 102, 255, 1)"},
+                        {background: "rgba(255, 159, 64, 0.6)", border: "rgba(255, 159, 64, 1)"},
+                        {background: "rgba(46, 204, 113, 0.6)", border: "rgba(46, 204, 113, 1)"},
+                        {background: "rgba(231, 76, 60, 0.6)", border: "rgba(231, 76, 60, 1)"},
+                        {background: "rgba(52, 152, 219, 0.6)", border: "rgba(52, 152, 219, 1)"},
+                        {background: "rgba(241, 196, 15, 0.6)", border: "rgba(241, 196, 15, 1)"}
+                    ];
+
+                    let years = Object.keys(data).map(Number).sort((a, b) => a - b);
+
+                    let colorMap = {};
+                    let sortedYearsDesc = [...years].reverse();
+                    sortedYearsDesc.forEach((year, index) => {
+                        colorMap[year] = colorOptions[index % colorOptions.length];
+                    });
+
+                    const datasets = years.map(year => ({
+                        label: `Students ${year}`,
+                        data: data[year],
+                        backgroundColor: colorMap[year].background,
+                        borderColor: colorMap[year].border,
+                        borderWidth: 2,
+                        pointRadius: 2
+                    }));
+
+                    let ctx = canvasElement.getContext("2d");
+                    if (canvasElement.chartInstance) canvasElement.chartInstance.destroy();
+
+                    let chartTitle;
+                    if (chartId === "temp") {
+                        let courseTitle = grp.jQuery("#courseSelect option:selected").text() || "All Courses";
+                        chartTitle = `${courseTitle} (${yearFrom} - ${yearTo})`;
+                    } else {
+                        chartTitle = grp.jQuery(canvasElement).data("chart-name") || `Chart ${chartId}`;
+                    }
+
+                    let chartOptions = {
+                        responsive: true,
+                        plugins: {
+                            title: {display: true, text: chartTitle, font: {size: 14}},
+                            legend: {
+                                position: "top",
+                                labels: {
+                                    boxWidth: 10,
+                                    font: {size: 10},
+                                    usePointStyle: false,
+                                },
+                                onClick: function (event, legendItem, legend) {
+                                    {% if not dashboard %}
+                                        const index = legendItem.datasetIndex;
+                                        const ci = legend.chart;
+                                        ci.getDatasetMeta(index).hidden = ci.getDatasetMeta(index).hidden === null ? !ci.data.datasets[index].hidden : null;
+                                        ci.update();
+                                    {% endif %}
+                                }
+                            },
+                            datalabels: {
+                                anchor: "end",
+                                align: "top",
+                                formatter: (value) => value > 0 ? value : "",
+                                font: {weight: "bold"},
+                                {% if dashboard %}
+                                    display: false
+                                {% endif %}
+                            }
+                        },
+                        scales: {y: {beginAtZero: true, suggestedMax: Math.max(...[].concat(...Object.values(data))) * 1.1}}
+                    };
+
+                    Chart.register(ChartDataLabels);
+                    canvasElement.chartInstance = new Chart(ctx, {
+                        type: chartType,
+                        {#data: {labels: ["Oct (prev)", "Nov (prev)", "Dec (prev)", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], datasets: datasets},#}
+                        data: {labels: ["Oct (prev)", "Nov (prev)", "Dec (prev)", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"], datasets: datasets},
+                        options: chartOptions
+                    });
+                })
+                .catch(error => console.error("Error fetching chart data:", error));
+        }
+
+        {% if not dashboard %}
+            grp.jQuery("#courseSelect, #yearFromSelect, #yearToSelect, #chartTypeSelect, #typeSelect").change(function () {
+                let tempChart = grp.jQuery("canvas[data-chart-id='temp']");
+                if (tempChart.length > 0) {
+                    updateChart(tempChart[0]);
+                }
+            });
+        {% endif %}
+
+        grp.jQuery("canvas[data-chart-id]").each(function () {
+            updateChart(this);
+        });
+
+        {% if not dashboard %}
+            grp.jQuery("#saveChartBtn").click(function () {
+                let chartId = grp.jQuery("#chartId").val();
+                let chartData = {
+                    chart_id: chartId ? chartId : null,
+                    course_id: grp.jQuery("#courseSelect").val() || null,
+                    year_from: grp.jQuery("#yearFromSelect").val() || null,
+                    year_to: grp.jQuery("#yearToSelect").val() || null,
+                    chart_type: grp.jQuery("#chartTypeSelect").val() || "bar",
+                    data_type: grp.jQuery("#typeSelect").val() || "data",
+                    display_order: grp.jQuery("#displayOrder").val() || 0,
+                    dashboard: grp.jQuery("#dashboardSelect").val() === "true"
+                };
+
+                fetch("/admin/save-chart/", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(chartData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            alert("Error: " + data.message);
+                        }
+                    })
+                    .catch(error => console.error("Error saving chart:", error));
+            });
+        {% endif %}
+    });
+</script>

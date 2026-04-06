@@ -1,0 +1,114 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Dust Busters PWA">
+    <link rel="apple-touch-icon" href="{% static 'pwa_attendance/pwa/icon.png' %}">
+    <link rel="manifest" href="{% static 'pwa_attendance/pwa/manifest.json' %}">
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dust Busters{% endblock %}</title>
+    {#    <link rel="stylesheet" href="/static/css/styles.css">#}
+    <link href="{% static 'pwa_attendance/css/styles.css' %}" rel="stylesheet"/>
+    {#    <script type="text/javascript" src="{% static 'grappelli/js/admin_breadcrumbs.js' %}"></script>#}
+    {% block head %}{% endblock %}
+</head>
+<body>
+<div id="install-banner" style="display: none;" class="install-banner">
+    <p id="install-text">Install this app on your device:</p>
+    <button id="install-button">Install App</button>
+    <button id="dismiss-install" style="margin-left: 10px;">Later</button>
+</div>
+
+<div class="hero-section">
+    <div class="overlay">
+        <nav class="navbar">
+            <span class="logo">Dust Busters</span>
+            <ul class="nav-links">
+                <li>
+                    {% block user %}<a href="{% url 'pwa_attendance_login' %}">Login</a>{% endblock %}
+                </li>
+            </ul>
+        </nav>
+        {% block hero %}{% endblock %}
+        <ul class="nav-links" style="justify-content: flex-end;margin-top: 15px;">
+            {% if user %}
+                <li><a href="{% url 'pwa_attendance_logout' %}">Logout</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register("{% static 'pwa_attendance/pwa/service-worker.js' %}")
+            .then(() => console.log("SW registered"));
+    }
+</script>
+<script>
+    let deferredPrompt;
+    const banner = document.getElementById("install-banner");
+    const installBtn = document.getElementById("install-button");
+    const dismissBtn = document.getElementById("dismiss-install");
+
+    // всегда удаляю, чтобы навязчиво!!
+    localStorage.removeItem("pwaPromptDismissed");
+
+    // только если ещё не установлено
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+        // для Android/Chrome
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            if (!localStorage.getItem("pwaPromptDismissed")) {
+                banner.style.display = "block";
+            }
+
+            installBtn.addEventListener("click", () => {
+                banner.style.display = "none";
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choice) => {
+                    if (choice.outcome === "accepted") {
+                        console.log("PWA installed");
+                    } else {
+                        console.log("PWA declined");
+                    }
+                    deferredPrompt = null;
+                });
+            });
+        });
+
+        // для iOS
+        const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+        if (isIOS && isSafari && !localStorage.getItem("pwaPromptDismissed")) {
+            banner.style.display = "block";
+            document.getElementById("install-text").innerHTML = `
+            <strong>To install this app:</strong><br>
+            Tap
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
+  <polyline points="16 6 12 2 8 6"/>
+  <line x1="12" y1="2" x2="12" y2="15"/>
+</svg>
+ Share and choose <strong>"Add to Home Screen"</strong>.
+        `;
+            installBtn.style.display = "none";
+        }
+
+        dismissBtn.addEventListener("click", () => {
+            banner.style.display = "none";
+            localStorage.setItem("pwaPromptDismissed", "true");
+        });
+    }
+</script>
+
+</body>
+</html>

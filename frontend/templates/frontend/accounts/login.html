@@ -1,0 +1,23 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block hero %}
+<section class="content-bg">
+    <div class="main-container">
+        <h2>Login</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input name="username" placeholder="Username">
+            <input type="password" name="password" placeholder="Password">
+
+            {% if error %}
+                <p><span class="error">{{ error }}</span></p>
+            {% endif %}
+
+            <button type="submit">Login</button>
+        </form>
+        <a href="{% url 'register' %}">Register</a>
+    </div>
+</section>
+{% endblock %}
