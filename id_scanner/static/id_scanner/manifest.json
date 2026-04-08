@@ -1,0 +1,31 @@
+{
+  "name": "ID Scanner",
+  "short_name": "ID Scan",
+  "description": "Capture IDs from a phone and run configurable OCR templates.",
+  "start_url": "/id-scan/",
+  "scope": "/id-scan/",
+  "display": "standalone",
+  "background_color": "#fffef8",
+  "theme_color": "#153243",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/id_scanner/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/id_scanner/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/id_scanner/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

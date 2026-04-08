@@ -1,0 +1,433 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Contact Check-in</title>
+
+  <link rel="manifest" href="{% static 'contacts/pwa/manifest.json' %}">
+  <meta name="theme-color" content="#0d6efd" />
+
+  <!-- Local (self-hosted) iPhone-compatible QR library -->
+  <script src="{% static 'contacts/pwa/html5-qrcode.min.js' %}"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 16px;
+      background: #fff;
+      color: #111;
+    }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+
+    .muted { color: #666; font-size: 13px; margin-bottom: 8px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+
+    button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+    }
+    button.primary { border-color: #0d6efd; background: #0d6efd; color: #fff; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Native scanner video (BarcodeDetector mode) */
+    #video {
+      width: 100%;
+      max-width: 520px;
+      height: 360px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #000;
+      display: none;
+      object-fit: cover;
+    }
+
+    /* html5-qrcode renders into this div */
+    #qr-reader {
+      width: 100%;
+      max-width: 520px;
+      min-height: 360px; /* KEY: ensure it can render */
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      overflow: hidden;
+      display: none;
+      background: #000;
+      margin-top: 8px;
+    }
+
+    /* Force html5-qrcode internal video/canvas to fill container */
+    #qr-reader video, #qr-reader canvas {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+
+    .status {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f7f7f7;
+      max-width: 520px;
+      line-height: 1.4;
+      margin-top: 12px;
+    }
+    .ok { color: #0a7a2f; }
+    .bad { color: #b00020; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eee;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Contact Check-in (QR)</h1>
+  <div class="muted">
+    Scan a QR code that contains only the Contact ID (example: <code>1</code>).
+    <span class="pill" id="modePill">mode: idle</span>
+  </div>
+
+  <div class="row">
+    <button class="primary" id="startBtn">Start Scan</button>
+    <button id="stopBtn" disabled>Stop</button>
+  </div>
+
+  <!-- Native preview (optional) -->
+  <video id="video" autoplay playsinline muted></video>
+
+  <!-- html5-qrcode preview -->
+  <div id="qr-reader"></div>
+
+  <div class="status">
+    Status: <span id="status">Idle</span>
+  </div>
+
+  <script>
+    // Best-effort service worker
+    // (Tip: if caching causes issues during local dev, disable SW for localhost/127.0.0.1)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("{% static 'contacts/pwa/service-worker.js' %}").catch(() => {});
+    }
+
+    const video = document.getElementById("video");
+    const qrReaderEl = document.getElementById("qr-reader");
+    const statusEl = document.getElementById("status");
+    const modePill = document.getElementById("modePill");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    let stream = null;
+    let detector = null;
+    let scanningNative = false;
+
+    let html5Qr = null;
+    let scanningHtml5 = false;
+
+    let lastRaw = null;
+    let lastTs = 0;
+
+    // Prevent double-start / race conditions
+    let starting = false;
+
+    function setStatus(msg, cls) {
+      statusEl.textContent = msg;
+      statusEl.className = cls || "";
+    }
+    function setMode(text) {
+      modePill.textContent = `mode: ${text}`;
+    }
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+      return null;
+    }
+
+    async function postCheckin(contactId) {
+      const csrftoken = getCookie("csrftoken");
+      const url = `/pwa1/api/checkin/${contactId}/`;
+
+      const resp = await fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify({ source: "pwa_qr" })
+      });
+
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${resp.status}`);
+      }
+      return data;
+    }
+
+    function debounceRaw(raw) {
+      const now = Date.now();
+      if (raw === lastRaw && (now - lastTs) < 2000) return true;
+      lastRaw = raw;
+      lastTs = now;
+      return false;
+    }
+
+    function parseContactId(raw) {
+      // Accept "123" or "id:123" or "contact:123" etc.
+      const s = String(raw || "").trim();
+      const m = s.match(/(\d+)/);
+      if (!m) return null;
+      const n = parseInt(m[1], 10);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    // -------------------------
+    // Fallback scanner (html5-qrcode) - PRIMARY
+    // -------------------------
+    async function startHtml5Scan() {
+      if (typeof window.Html5Qrcode === "undefined") {
+        throw new Error("Html5Qrcode is undefined (library not loaded).");
+      }
+
+      // Ensure native is stopped first
+      if (scanningNative) {
+        await stopScan();
+      }
+
+      // Make sure container is visible BEFORE start (important)
+      video.style.display = "none";
+      qrReaderEl.style.display = "block";  // ✅ was ""
+      qrReaderEl.innerHTML = ""; // clear previous render
+
+      // Force layout calc (helps Windows)
+      qrReaderEl.getBoundingClientRect();
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      setMode("html5");
+      setStatus("Scanning…", "");
+
+      if (!html5Qr) {
+        html5Qr = new Html5Qrcode("qr-reader");
+      }
+
+      scanningHtml5 = true;
+
+      await html5Qr.start(
+        { facingMode: "environment" },
+        {
+          fps: 12,
+          // ✅ IMPORTANT: clamp qrbox size >= 50px to avoid "minimum size is 50px" crash
+          qrbox: (w, h) => {
+            const minEdge = Math.min(w, h);
+            const size = Math.max(50, Math.floor(minEdge * 0.8));
+            return { width: size, height: size };
+          }
+        },
+        async (decodedText) => {
+          if (!scanningHtml5) return;
+
+          const raw = (decodedText || "").trim();
+          if (debounceRaw(raw)) return;
+
+          const contactId = parseContactId(raw);
+          if (!contactId) {
+            setStatus(`Scanned non-numeric value: "${raw}"`, "bad");
+            return;
+          }
+
+          // Stop scanning right away to avoid re-trigger
+          await stopHtml5Only();
+
+          setStatus(`Scanned ID ${contactId}. Checking in…`, "");
+
+          try {
+            const result = await postCheckin(contactId);
+            setStatus(`✅ Checked in: ${result.name} (ID ${result.contact_id})`, "ok");
+            if (navigator.vibrate) navigator.vibrate(100);
+          } catch (e) {
+            setStatus(`❌ Check-in failed: ${e.message}`, "bad");
+            if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
+          } finally {
+            // Optional: auto-restart scanning after result
+            // await startHtml5Scan();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            setMode("idle");
+          }
+        },
+        () => {}
+      );
+    }
+
+    async function stopHtml5Only() {
+      scanningHtml5 = false;
+      if (html5Qr) {
+        try { await html5Qr.stop(); } catch (e) {}
+        try { await html5Qr.clear(); } catch (e) {}
+      }
+      qrReaderEl.style.display = "none";
+    }
+
+    // -------------------------
+    // Native scanner (BarcodeDetector) - OPTIONAL / secondary
+    // -------------------------
+    async function startNativeScan() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera not supported.");
+      }
+      if (!("BarcodeDetector" in window)) {
+        throw new Error("BarcodeDetector not supported.");
+      }
+
+      detector = new BarcodeDetector({ formats: ["qr_code"] });
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+
+      qrReaderEl.style.display = "none";
+      video.style.display = "";
+      video.srcObject = stream;
+
+      // Ensure the video actually starts
+      await new Promise((resolve) => {
+        video.addEventListener("loadedmetadata", () => resolve(), { once: true });
+      });
+      try { await video.play(); } catch (e) {}
+
+      scanningNative = true;
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      setMode("native");
+      setStatus("Scanning… (native)", "");
+
+      tickNative();
+    }
+
+    async function tickNative() {
+      if (!scanningNative) return;
+
+      try {
+        const codes = await detector.detect(video);
+        if (codes && codes.length) {
+          const raw = (codes[0].rawValue || "").trim();
+          if (debounceRaw(raw)) {
+            requestAnimationFrame(tickNative);
+            return;
+          }
+
+          const contactId = parseContactId(raw);
+          if (!contactId) {
+            setStatus(`Scanned non-numeric value: "${raw}"`, "bad");
+            requestAnimationFrame(tickNative);
+            return;
+          }
+
+          setStatus(`Scanned ID ${contactId}. Checking in…`, "");
+
+          try {
+            const result = await postCheckin(contactId);
+            setStatus(`✅ Checked in: ${result.name} (ID ${result.contact_id})`, "ok");
+            if (navigator.vibrate) navigator.vibrate(100);
+          } catch (e) {
+            setStatus(`❌ Check-in failed: ${e.message}`, "bad");
+            if (navigator.vibrate) navigator.vibrate([80, 50, 80]);
+          }
+        }
+      } catch (e) {
+        // If native breaks, fall back to html5
+        scanningNative = false;
+        setStatus("Native scan error — switching to html5 mode…", "bad");
+        await stopScan();
+        await startHtml5Scan();
+        return;
+      }
+
+      requestAnimationFrame(tickNative);
+    }
+
+    // -------------------------
+    // Stop all
+    // -------------------------
+    async function stopScan() {
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      setMode("idle");
+      setStatus("Stopped.", "");
+
+      // stop native
+      scanningNative = false;
+      if (stream) {
+        for (const t of stream.getTracks()) t.stop();
+      }
+      stream = null;
+      detector = null;
+      video.srcObject = null;
+      video.style.display = "none";
+
+      // stop html5
+      await stopHtml5Only();
+    }
+
+    // -------------------------
+    // Start (prefer html5 first)
+    // -------------------------
+    startBtn.addEventListener("click", async () => {
+      if (starting) return;
+      starting = true;
+
+      try {
+        // Always stop any existing session first (prevents camera-in-use)
+        await stopScan();
+
+        // Prefer html5 first (most reliable preview)
+        await startHtml5Scan();
+
+        // If you REALLY want native first on some devices, flip logic:
+        // try { await startNativeScan(); } catch { await startHtml5Scan(); }
+
+      } catch (e) {
+        const msg = (e && e.message) ? e.message : String(e);
+        if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("denied")) {
+          setStatus("Camera permission denied. Check browser permissions.", "bad");
+        } else if (msg.toLowerCase().includes("in use") || msg.toLowerCase().includes("notreadableerror")) {
+          setStatus("Camera is already in use by another app/tab. Close it and try again.", "bad");
+        } else {
+          setStatus(`Start failed: ${msg}`, "bad");
+        }
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        setMode("idle");
+      } finally {
+        starting = false;
+      }
+    });
+
+    stopBtn.addEventListener("click", () => {
+      stopScan();
+    });
+
+    // Stop camera when leaving page
+    window.addEventListener("beforeunload", () => {
+      // don't await in unload
+      try { stopScan(); } catch (e) {}
+    });
+  </script>
+</body>
+</html>

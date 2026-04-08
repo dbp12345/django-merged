@@ -1,0 +1,156 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Check-in</title>
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+    h1 { font-size: 20px; margin: 0 0 10px; }
+    #reader { width: 100%; max-width: 420px; }
+    .msg { margin-top: 10px; padding: 10px; border-radius: 10px; background: #f3f4f6; }
+    .meta { margin-top: 10px; padding: 10px; border-radius: 10px; background: #fff7e6; border: 1px solid #f0c36d; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; background: #fff; }
+    .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  </style>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <h1>Scan Contact QR</h1>
+
+  <div class="meta">
+    <strong>Migration status:</strong> {{ integration_status }}
+    {% if integration_enabled %}
+    <div>Target: {{ target_model_label }}.{{ target_field_name }}</div>
+    {% else %}
+    <div>UI preview is available, but database writes are intentionally disabled.</div>
+    {% endif %}
+  </div>
+
+  <div id="reader"></div>
+
+  <div class="row">
+    <button type="button" id="flipBtn">Flip Camera</button>
+  </div>
+
+  <div class="msg" id="status">Ready.</div>
+
+  <script>
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+      return null;
+    }
+
+    const statusEl = document.getElementById("status");
+    const csrfToken = getCookie("csrftoken");
+    const flipBtn = document.getElementById("flipBtn");
+    const scanUrl = "{% url 'checkin_pwa:scan' %}";
+    const integrationEnabled = {{ integration_enabled|yesno:"true,false" }};
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    async function sendCheckin(contactId) {
+      if (!integrationEnabled) {
+        setStatus("Migration mode: scan captured, but saving is disabled.");
+        return;
+      }
+
+      setStatus("Updating check-in for ID " + contactId + " ...");
+
+      const form = new FormData();
+      form.append("contact_id", contactId);
+
+      const resp = await fetch(scanUrl, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken },
+        body: form,
+        credentials: "same-origin",
+      });
+
+      const data = await resp.json();
+      if (data.success) {
+        setStatus("Checked in: " + contactId);
+      } else {
+        setStatus("Error: " + (data.error || "Failed"));
+      }
+    }
+
+    let locked = false;
+
+    function onScanSuccess(decodedText) {
+      if (locked) return;
+
+      const trimmed = (decodedText || "").trim();
+      if (!/^\d+$/.test(trimmed)) {
+        setStatus("Scanned value is not a number: " + trimmed);
+        return;
+      }
+
+      locked = true;
+      sendCheckin(trimmed).finally(() => {
+        setTimeout(() => { locked = false; }, 1500);
+      });
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+    let cameras = [];
+    let currentCameraIndex = 0;
+
+    function startCamera() {
+      if (!cameras.length) {
+        setStatus("No camera found.");
+        return;
+      }
+
+      const cameraId = cameras[currentCameraIndex].id;
+
+      html5QrCode.start(
+        cameraId,
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess
+      ).then(() => {
+        setStatus(integrationEnabled ? "Camera started." : "Camera started in migration preview mode.");
+        flipBtn.disabled = (cameras.length < 2);
+      }).catch(err => {
+        setStatus("Camera start error: " + err);
+      });
+    }
+
+    function flipCamera() {
+      if (cameras.length < 2) {
+        setStatus("Only one camera available.");
+        return;
+      }
+
+      html5QrCode.stop().then(() => {
+        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+        startCamera();
+      }).catch(err => {
+        setStatus("Camera stop error: " + err);
+      });
+    }
+
+    flipBtn.addEventListener("click", flipCamera);
+
+    Html5Qrcode.getCameras().then(list => {
+      cameras = list || [];
+      const backIndex = cameras.findIndex(c =>
+        (c.label || "").toLowerCase().includes("back") ||
+        (c.label || "").toLowerCase().includes("rear")
+      );
+      if (backIndex >= 0) currentCameraIndex = backIndex;
+
+      startCamera();
+    }).catch(err => {
+      setStatus("Camera list error: " + err);
+    });
+  </script>
+</body>
+</html>

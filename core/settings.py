@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from datetime import timedelta
 from importlib.util import find_spec
 
@@ -21,6 +22,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 env.read_env(BASE_DIR / ".env")
 
+
+def env_first(names, default=None):
+    for name in names:
+        value = os.environ.get(name)
+        if value not in (None, ""):
+            return value
+    return default
+
+
+def env_bool_multi(names, default=False):
+    raw = env_first(names, "1" if default else "0")
+    return str(raw).strip().lower() in ("1", "true", "yes", "y", "on")
+
+
+def env_list_multi(names, default):
+    raw = env_first(names, ",".join(default))
+    return [item.strip() for item in str(raw).split(",") if item.strip()]
+
 SPECIAL_USERS = ["admin", "dima", "csnortland", "operations"]
 
 MANUALS_DIR = BASE_DIR / "docs"
@@ -29,23 +48,39 @@ MANUALS_DIR = BASE_DIR / "docs"
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-*c5#jqyx=sjk=5y*zvl3t28472!fm9lxtjc9tz2b)zy2!rg8ko"
+SECRET_KEY = env_first(
+    ("DJANGO_SECRET_KEY", "SECRET_KEY"),
+    "django-insecure-*c5#jqyx=sjk=5y*zvl3t28472!fm9lxtjc9tz2b)zy2!rg8ko",
+)
 
 EXTERNAL_API_TOKEN = env("EXTERNAL_API_TOKEN")
 
 # SECURITY WARNING: don"t run with debug turned on in production!
-DEBUG = env.bool("DEBUG", default=False)
+DEBUG = env_bool_multi(("DEBUG", "DJANGO_DEBUG"), default=False)
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379")
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 524288000  # 500MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env_bool_multi(
+    ("DJANGO_SECURE_SSL_REDIRECT", "SECURE_SSL_REDIRECT"),
+    default=False,
+)
+SESSION_COOKIE_SECURE = (not DEBUG) and SECURE_SSL_REDIRECT
+CSRF_COOKIE_SECURE = (not DEBUG) and SECURE_SSL_REDIRECT
+CSRF_TRUSTED_ORIGINS = env_list_multi(
+    ("DJANGO_CSRF_TRUSTED_ORIGINS",),
+    ["https://prod.vectorops.xyz"],
+)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = env_first(("DJANGO_REFERRER_POLICY",), "same-origin")
+X_FRAME_OPTIONS = env_first(("DJANGO_X_FRAME_OPTIONS",), "SAMEORIGIN")
 
-X_FRAME_OPTIONS = "SAMEORIGIN"
-
-# ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = env_list_multi(
+    ("DJANGO_ALLOWED_HOSTS", "ALLOWED_HOSTS"),
+    ["127.0.0.1", "localhost", "prod.vectorops.xyz", "52.88.131.53"],
+)
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "America/Los_Angeles"
 USE_I18N = True
@@ -86,6 +121,26 @@ FLEXTIME_SHARED_KEY = env("FLEXTIME_SHARED_KEY", default=None)
 FLEXTIME_WSPASS = env("FLEXTIME_WSPASS", default=None)
 FLEXTIME_TZ = env("FLEXTIME_TZ", default=None)
 FLEXTIME_TOKEN_TTL = env.int("FLEXTIME_TOKEN_TTL", default=5400)
+
+GHL_CLIENT_ID = env("GHL_CLIENT_ID", default="")
+GHL_CLIENT_SECRET = env("GHL_CLIENT_SECRET", default="")
+GHL_REDIRECT_URI = env("GHL_REDIRECT_URI", default="")
+GHL_VERSION_ID = env("GHL_VERSION_ID", default="2021-07-28")
+GHL_DJANGO_CONTACT_ID_FIELD_ID = env("GHL_DJANGO_CONTACT_ID_FIELD_ID", default="")
+GHL_LOCATION_ID = env("GHL_LOCATION_ID", default="")
+GHL_DEFAULT_COMPANY_NAME = env("GHL_DEFAULT_COMPANY_NAME", default="Dust Busters Plus LLC")
+GHL_DEFAULT_CONTACT_ROLE = env("GHL_DEFAULT_CONTACT_ROLE", default="employee")
+GHL_WEBHOOK_PUBLIC_KEY = env("GHL_WEBHOOK_PUBLIC_KEY", default="")
+GHL_WEBHOOK_LEGACY_PUBLIC_KEY = env("GHL_WEBHOOK_LEGACY_PUBLIC_KEY", default="")
+GHL_CALLS_ALLOW_UNSIGNED_WEBHOOKS = env.bool("GHL_CALLS_ALLOW_UNSIGNED_WEBHOOKS", default=False)
+GHL_DJANGO_COMPANY_FIELD_ID = env("GHL_DJANGO_COMPANY_FIELD_ID", default="")
+GHL_DJANGO_ROLE_FIELD_ID = env("GHL_DJANGO_ROLE_FIELD_ID", default="")
+GHL_DJANGO_Role_ID = GHL_DJANGO_ROLE_FIELD_ID
+
+LD_WEBHOOK_SECRET = env("LD_WEBHOOK_SECRET", default="")
+LEARNDASH_BASE_URL = env("LEARNDASH_BASE_URL", default="")
+LEARNDASH_USERNAME = env("LEARNDASH_USERNAME", default="")
+LEARNDASH_APP_PASSWORD = env("LEARNDASH_APP_PASSWORD", default="")
 
 EXCHANGE_PRIMARY_SMTP_ADDRESS = env("EXCHANGE_PRIMARY_SMTP_ADDRESS", default=None)
 EXCHANGE_USERNAME = env("EXCHANGE_USERNAME", default=None)
@@ -144,6 +199,18 @@ INSTALLED_APPS = [
     "pwa_vehicle",
     "pwa_crwb",
     "pwa_notifications",
+    "checkin_pwa",
+    "evernote_pwa",
+    "companies",
+    "contacts",
+    "pic_pwa",
+    "id_scanner",
+    "jobs",
+    "invoices",
+    "integrations",
+    "ghl_calls",
+    "learndash",
+    "learndash_webhook.app.LearndashWebhookConfig",
     "automations",
     "import_export",
     "treebeard",
@@ -151,6 +218,8 @@ INSTALLED_APPS = [
     "eav",
     "pdf_plugin",
 ]
+
+USE_WHITENOISE = env_bool_multi(("DJANGO_USE_WHITENOISE",), default=False)
 
 # if DEBUG and find_spec("django_extensions"):
 # INSTALLED_APPS.append("django_extensions")
@@ -170,6 +239,9 @@ MIDDLEWARE = [
     "core.middleware.CurrentUserMiddleware",
     "axes.middleware.AxesMiddleware",
 ]
+
+if USE_WHITENOISE and find_spec("whitenoise"):
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
@@ -229,13 +301,40 @@ WSGI_APPLICATION = "core.wsgi.application"
 # GRAPPELLI_INDEX_DASHBOARD_DEBUG = True
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+db_engine_setting = env_first(("DB_ENGINE", "DJANGO_DB_ENGINE"), "sqlite").strip().lower()
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if db_engine_setting in {"mysql", "django.db.backends.mysql"}:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": env_first(("DB_NAME", "DJANGO_DB_NAME"), "dbfightfire"),
+            "USER": env_first(("DB_USER", "DJANGO_DB_USER"), "root"),
+            "PASSWORD": env_first(("DB_PASSWORD", "DJANGO_DB_PASSWORD"), ""),
+            "HOST": env_first(("DB_HOST", "DJANGO_DB_HOST"), "127.0.0.1"),
+            "PORT": env_first(("DB_PORT", "DJANGO_DB_PORT"), "3306"),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        }
     }
-}
+elif db_engine_setting in {"postgres", "postgresql", "django.db.backends.postgresql"}:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env_first(("DB_NAME", "DJANGO_DB_NAME"), "dbfightfire"),
+            "USER": env_first(("DB_USER", "DJANGO_DB_USER"), "postgres"),
+            "PASSWORD": env_first(("DB_PASSWORD", "DJANGO_DB_PASSWORD"), ""),
+            "HOST": env_first(("DB_HOST", "DJANGO_DB_HOST"), "127.0.0.1"),
+            "PORT": env_first(("DB_PORT", "DJANGO_DB_PORT"), "5432"),
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": env_first(("DJANGO_DB_NAME",), str(BASE_DIR / "db.sqlite3")),
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -261,12 +360,30 @@ AUTH_PASSWORD_VALIDATORS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static"
+STATIC_ROOT = Path(env_first(("DJANGO_STATIC_ROOT",), str(BASE_DIR / "static")))
+
+if USE_WHITENOISE and find_spec("whitenoise"):
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# OCR
+default_tesseract_cmd = "tesseract"
+windows_tesseract_path = r"C:\Users\cyafei\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+if os.name == "nt" and os.path.exists(windows_tesseract_path):
+    default_tesseract_cmd = windows_tesseract_path
+
+TESSERACT_CMD = os.environ.get("TESSERACT_CMD", default_tesseract_cmd)
 
 # CACHES = {
 #     'default': {
@@ -280,12 +397,18 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": f"{REDIS_URL}/1",
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": True,
+        },
     },
     "axes": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": f"{REDIS_URL}/2",
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": True,
+        },
     },
 }
 AXES_CACHE = "axes"

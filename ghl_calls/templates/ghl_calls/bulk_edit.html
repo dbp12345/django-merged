@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Bulk Edit {{ active_config.label }}</title>
+    <style>
+        :root {
+            --bg: #f6f3ec;
+            --panel: #fffdf8;
+            --line: #d8d0c3;
+            --ink: #221c16;
+            --muted: #6f6559;
+            --accent: #0f766e;
+            --accent-soft: #d9f1ee;
+            --danger: #9f1239;
+            --success: #166534;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 28%),
+                linear-gradient(180deg, #efe9de 0%, var(--bg) 100%);
+            color: var(--ink);
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .header h1 {
+            margin: 0 0 6px;
+            font-size: 34px;
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .header-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 253, 248, 0.9);
+            color: var(--ink);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .header-link:hover {
+            background: #fff;
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 253, 248, 0.85);
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .panel {
+            background: rgba(255, 253, 248, 0.94);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: 0 14px 38px rgba(74, 54, 35, 0.08);
+        }
+
+        .search-panel {
+            margin-bottom: 18px;
+            padding: 18px;
+        }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: start;
+        }
+
+        textarea,
+        input,
+        select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+            color: var(--ink);
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 78px;
+            resize: vertical;
+        }
+
+        .search-actions,
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 11px 16px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .secondary {
+            background: #ece4d7;
+            color: var(--ink);
+        }
+
+        .flash {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: #eef8ee;
+            color: var(--success);
+        }
+
+        .flash.error {
+            background: #fff1f4;
+            color: var(--danger);
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.9fr);
+            gap: 18px;
+        }
+
+        .panel-head {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.45);
+        }
+
+        .panel-head h2,
+        .panel-head h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .panel-body {
+            padding: 18px;
+        }
+
+        .selection-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .selection-tools {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .selection-count {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .segment-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .segment-card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+            padding: 14px;
+        }
+
+        .segment-header {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .segment-body {
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 17px;
+            line-height: 1.6;
+        }
+
+        .segment-meta {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: #efe7da;
+            color: var(--ink);
+            font-size: 12px;
+        }
+
+        .segment-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .segment-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .segment-link:hover {
+            text-decoration: underline;
+        }
+
+        .linked-context {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .empty-state {
+            padding: 16px;
+            border: 1px dashed var(--line);
+            border-radius: 14px;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.65);
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .field-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .field-toggle input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .field-help {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .pagination {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .pagination-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 980px) {
+            .workspace,
+            .search-grid,
+            .segment-header {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div>
+                <h1>Bulk Edit Transcription Segments</h1>
+                <div class="meta">
+                    Work through parsed GHL call transcription in batches.<br>
+                    Search by text, call ID, or pasted multi-line lists, then replace words or phrases across many {{ active_config.label|lower }} at once.
+                </div>
+            </div>
+            <a class="header-link" href="{% url 'admin:ghl_calls_ghlcall_changelist' %}" target="_blank">Open Calls Admin</a>
+        </div>
+
+        <div class="tabs">
+            {% for tab in bulk_tabs %}
+                <a class="tab{% if tab.key == active_kind %} active{% endif %}" href="{{ tab.url }}">{{ tab.label }}</a>
+            {% endfor %}
+        </div>
+
+        {% if success_message %}
+            <div class="flash">{{ success_message }}</div>
+        {% endif %}
+        {% if error_message %}
+            <div class="flash error">{{ error_message }}</div>
+        {% endif %}
+
+        <div class="panel search-panel">
+            <form method="get">
+                <input type="hidden" name="kind" value="{{ active_kind }}">
+                <div class="search-grid">
+                    <div>
+                        <textarea name="q" placeholder="{{ search_placeholder }}">{{ search_value }}</textarea>
+                        <div class="meta" style="margin-top: 8px;">
+                            Paste one line per search term to quickly pull in matching transcript segments.
+                        </div>
+                    </div>
+                    <div class="search-actions">
+                        <button type="submit" class="primary">Search</button>
+                        <a class="header-link" href="{% url 'ghl_call_bulk_edit' %}?kind={{ active_kind }}">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="kind" value="{{ active_kind }}">
+            <input type="hidden" name="q" value="{{ search_value }}">
+            <input type="hidden" name="page" value="{{ current_page }}">
+
+            <div class="workspace">
+                <section class="panel">
+                    <div class="panel-head">
+                        <h2>Select {{ active_config.label }} To Edit</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="selection-toolbar">
+                            <div class="selection-tools">
+                                <button type="button" class="secondary" id="select-visible">Select Visible</button>
+                                <button type="button" class="secondary" id="clear-visible">Clear</button>
+                            </div>
+                            <div class="selection-count">
+                                <span id="selected-count">0</span> selected on this page
+                            </div>
+                        </div>
+
+                        <div class="segment-list">
+                            {% for row in segment_rows %}
+                                <label class="segment-card">
+                                    <div class="segment-header">
+                                        <div>
+                                            <input class="segment-checkbox" type="checkbox" name="segment_ids" value="{{ row.id }}">
+                                        </div>
+                                        <div>
+                                            <strong>{{ row.call_label|default:"(missing call id)" }}</strong>
+                                            <div class="segment-body">{{ row.text }}</div>
+                                        </div>
+                                        <div class="segment-links">
+                                            <a class="segment-link" href="{{ row.review_url }}" target="_blank">Review</a>
+                                            <a class="segment-link" href="{{ row.call_admin_url }}" target="_blank">Call</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="segment-meta">
+                                        <span class="badge">{{ row.speaker_role }}</span>
+                                        <span class="badge">{{ row.start_index|default:"-" }}-{{ row.end_index|default:"-" }}</span>
+                                        {% if row.node_name %}
+                                            <span class="badge">{{ active_config.node_label }}: {{ row.node_name }}</span>
+                                        {% else %}
+                                            <span class="badge">{{ active_config.node_label }}: Unassigned</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if row.linked_context %}
+                                        <div class="linked-context">
+                                            Linked question: {{ row.linked_context }}
+                                        </div>
+                                    {% endif %}
+                                </label>
+                            {% empty %}
+                                <div class="empty-state">
+                                    No {{ active_config.label|lower }} matched this search.
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if page_obj.paginator.num_pages > 1 %}
+                            <div class="pagination">
+                                <div class="selection-count">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}<br>
+                                    {{ page_obj.paginator.count }} total {{ active_config.label|lower }}
+                                </div>
+                                <div class="pagination-links">
+                                    {% if page_obj.has_previous %}
+                                        <a class="pagination-link" href="{% url 'ghl_call_bulk_edit' %}?{{ query_base }}&page={{ page_obj.previous_page_number }}">Previous</a>
+                                    {% endif %}
+                                    {% if page_obj.has_next %}
+                                        <a class="pagination-link" href="{% url 'ghl_call_bulk_edit' %}?{{ query_base }}&page={{ page_obj.next_page_number }}">Next</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <aside class="panel">
+                    <div class="panel-head">
+                        <h3>Apply Changes</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="field-help" style="margin-bottom: 14px;">
+                            This bulk editor rewrites the selected segment text and updates the parent call transcript to match.
+                        </div>
+
+                        <div class="field">
+                            <label class="field-toggle" for="find_text">
+                                Find text
+                            </label>
+                            <div class="field-help">Literal text to replace inside each selected segment.</div>
+                            <input id="find_text" name="find_text" type="text" value="{{ form_state.find_text }}" placeholder="old word">
+                        </div>
+
+                        <div class="field">
+                            <label class="field-toggle" for="replacement_text">
+                                Replace with
+                            </label>
+                            <div class="field-help">Leave blank to remove the matched text.</div>
+                            <input id="replacement_text" name="replacement_text" type="text" value="{{ form_state.replacement_text }}" placeholder="new word">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="primary">Apply Changes</button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const checkboxes = Array.from(document.querySelectorAll(".segment-checkbox"));
+        const selectedCount = document.getElementById("selected-count");
+        const selectVisibleButton = document.getElementById("select-visible");
+        const clearVisibleButton = document.getElementById("clear-visible");
+
+        function updateSelectedCount() {
+            selectedCount.textContent = String(checkboxes.filter((checkbox) => checkbox.checked).length);
+        }
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", updateSelectedCount);
+        });
+
+        selectVisibleButton?.addEventListener("click", () => {
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+        });
+
+        clearVisibleButton?.addEventListener("click", () => {
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = false;
+            });
+            updateSelectedCount();
+        });
+
+        updateSelectedCount();
+    </script>
+</body>
+</html>

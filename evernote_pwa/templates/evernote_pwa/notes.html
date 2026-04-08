@@ -1,0 +1,53 @@
+{% extends "evernote_pwa/base.html" %}
+
+{% block title %}All Notes{% endblock %}
+
+{% block content %}
+  <section class="section-panel">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Section</p>
+        <h1>All Notes</h1>
+        <p class="muted">Browse every note in one place and jump straight into editing.</p>
+      </div>
+      <div class="section-actions">
+        <a class="button primary" href="{% url 'evernote_pwa:note_create' %}">New Note</a>
+        <a class="button ghost" href="{% url 'evernote_pwa:dashboard' %}">Back Home</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="notes-panel">
+    <div class="notes-head">
+      <div>
+        <h2>{{ note_count }} Notes</h2>
+        <p class="muted">Tap any card to edit it.</p>
+      </div>
+    </div>
+
+    <div class="note-grid">
+      {% for note in notes %}
+        <a class="note-card" href="{% url 'evernote_pwa:note_edit' note.pk %}">
+          <div class="note-card-head">
+            <strong>{{ note.title|default:"Untitled" }}</strong>
+            <span class="pill {{ note.source }}">{{ note.get_source_display }}</span>
+          </div>
+          <p>{{ note.content|truncatechars:180 }}</p>
+          <div class="note-card-meta">
+            <span>{% if note.notebook %}{{ note.notebook.name }}{% else %}No notebook{% endif %}</span>
+            {% if note.needs_push %}
+              <span>Pending push</span>
+            {% elif note.is_deleted_remote %}
+              <span>Missing remotely</span>
+            {% endif %}
+          </div>
+        </a>
+      {% empty %}
+        <article class="empty-state">
+          <h3>No notes yet</h3>
+          <p>Create your first note to start building your notebook app.</p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "evernote_pwa/base.html" %}
+
+{% block title %}Notebooks{% endblock %}
+
+{% block content %}
+  <section class="section-panel">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Section</p>
+        <h1>Notebooks</h1>
+        <p class="muted">Open a notebook or create a new one quickly.</p>
+      </div>
+      <a class="button ghost" href="{% url 'evernote_pwa:dashboard' %}">Back Home</a>
+    </div>
+
+    <section class="quick-create-card">
+      <form method="post" class="quick-create-form">
+        {% csrf_token %}
+        <label class="quick-create-field">
+          <span class="label">Notebook name</span>
+          <input type="text" name="notebook_name" placeholder="Create a notebook" autocomplete="off">
+        </label>
+        <button class="button secondary" type="submit">Save Notebook</button>
+      </form>
+    </section>
+  </section>
+
+  <section class="workspace">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <h2>Notebook List</h2>
+        <span class="muted">{{ notebooks.count }} total</span>
+      </div>
+      <a class="notebook-link {% if not selected_notebook %}active{% endif %}" href="{% url 'evernote_pwa:notebooks' %}">
+        <span>All notebooks</span>
+        <small>{{ notebooks.count }}</small>
+      </a>
+      {% for notebook in notebooks %}
+        <a class="notebook-link {% if selected_notebook and selected_notebook.pk == notebook.pk %}active{% endif %}" href="{% url 'evernote_pwa:notebooks' %}?notebook={{ notebook.pk }}">
+          <span>{{ notebook.name }}</span>
+          <small>{{ notebook.notes.count }}</small>
+        </a>
+      {% empty %}
+        <p class="muted">No notebooks yet.</p>
+      {% endfor %}
+    </aside>
+
+    <section class="notes-panel">
+      <div class="notes-head">
+        <div>
+          <h2>{% if selected_notebook %}{{ selected_notebook.name }}{% else %}Notebook Preview{% endif %}</h2>
+          <p class="muted">
+            {% if selected_notebook %}
+              Notes inside this notebook.
+            {% else %}
+              Choose a notebook to preview its notes.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="note-grid">
+        {% for note in notes %}
+          <a class="note-card" href="{% url 'evernote_pwa:note_edit' note.pk %}">
+            <div class="note-card-head">
+              <strong>{{ note.title|default:"Untitled" }}</strong>
+              <span class="pill {{ note.source }}">{{ note.get_source_display }}</span>
+            </div>
+            <p>{{ note.content|truncatechars:180 }}</p>
+            <div class="note-card-meta">
+              <span>{% if note.notebook %}{{ note.notebook.name }}{% else %}No notebook{% endif %}</span>
+            </div>
+          </a>
+        {% empty %}
+          <article class="empty-state">
+            <h3>No notes here yet</h3>
+            <p>Create a note and assign it to a notebook to see it here.</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  </section>
+{% endblock %}

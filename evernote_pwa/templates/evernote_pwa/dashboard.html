@@ -1,0 +1,50 @@
+{% extends "evernote_pwa/base.html" %}
+
+{% block title %}Evernote Mirror{% endblock %}
+
+{% block content %}
+  <section class="home-panel">
+    <div class="home-head">
+      <div>
+        <p class="eyebrow">Home</p>
+        <h1>Notes</h1>
+      </div>
+      <a class="home-icon-link" href="{% url 'evernote_pwa:dashboard' %}" aria-label="Home">Home</a>
+    </div>
+
+    <div class="home-actions">
+      <a class="button primary" href="{% url 'evernote_pwa:note_create' %}">New Note</a>
+    </div>
+
+    <nav class="menu-links" aria-label="Main sections">
+      <a class="menu-link" href="{% url 'evernote_pwa:notebooks' %}">
+        <span class="menu-arrow">&rsaquo;</span>
+        <span class="menu-label">Notebooks</span>
+        <span class="menu-meta">{{ notebook_count }}</span>
+      </a>
+      <a class="menu-link" href="{% url 'evernote_pwa:notes' %}">
+        <span class="menu-arrow">&rsaquo;</span>
+        <span class="menu-label">All Notes</span>
+        <span class="menu-meta">{{ note_count }}</span>
+      </a>
+    </nav>
+
+    <div class="home-status">
+      <div class="home-status-item">
+        <span class="label">Connection</span>
+        <strong>{% if connection.is_connected %}Connected{% else %}Local only{% endif %}</strong>
+      </div>
+      <div class="home-status-item">
+        <span class="label">Sync</span>
+        <strong>{% if connection.last_pulled_at %}Ready{% else %}Waiting{% endif %}</strong>
+      </div>
+    </div>
+  </section>
+
+  {% if not is_configured %}
+    <section class="setup-callout">
+      <h2>Evernote hookup is parked for now</h2>
+      <p>The local note app is ready. When you get your API approval, we will add <code>EVERNOTE_CONSUMER_KEY</code> and <code>EVERNOTE_CONSUMER_SECRET</code> and turn on sync.</p>
+    </section>
+  {% endif %}
+{% endblock %}

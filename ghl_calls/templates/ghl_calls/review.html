@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Call Review {{ call.ghl_call_id }}</title>
+    <style>
+        :root {
+            --bg: #f4efe6;
+            --paper: #fffaf2;
+            --ink: #1f1a14;
+            --muted: #6d6257;
+            --accent: #0f766e;
+            --accent-soft: #d9f2ef;
+            --line: #dccfbe;
+            --warn: #9f1239;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            background: linear-gradient(180deg, #efe6d8 0%, var(--bg) 100%);
+            color: var(--ink);
+        }
+
+        .page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .header-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 250, 242, 0.92);
+            color: var(--ink);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .header-link:hover {
+            background: #fff;
+        }
+
+        .header h1 {
+            margin: 0 0 6px;
+            font-size: 34px;
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .shell {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 250, 242, 0.94);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: 0 12px 35px rgba(76, 55, 33, 0.08);
+            overflow: hidden;
+        }
+
+        .panel-head {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .panel-head h2,
+        .panel-head h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .panel-body {
+            padding: 18px;
+        }
+
+        .transcript {
+            min-height: 520px;
+            margin: 0;
+            padding: 18px;
+            background: var(--paper);
+            border: 1px dashed var(--line);
+            border-radius: 14px;
+            cursor: text;
+        }
+
+        .transcript-raw {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        .transcript-raw-wrap {
+            margin-bottom: 18px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.72);
+            overflow: hidden;
+        }
+
+        .transcript-raw-head {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--line);
+            background: #f8f0e5;
+            font-size: 14px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .transcript-raw-body {
+            padding: 14px;
+        }
+
+        .flow-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .flow-tools input,
+        .flow-tools select {
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            font: inherit;
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .flow-search {
+            flex: 1 1 240px;
+            min-width: 220px;
+        }
+
+        .transcript-flow {
+            display: grid;
+            gap: 12px;
+        }
+
+        .flow-item {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .flow-kind {
+            font-size: 13px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+
+        .flow-text {
+            font-size: 18px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .flow-meta {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .flow-context {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .flow-empty {
+            display: none;
+            padding: 12px 14px;
+            border: 1px dashed var(--line);
+            border-radius: 12px;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .helper {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .selection-bar {
+            display: grid;
+            gap: 10px;
+        }
+
+        .selection-meta {
+            background: var(--accent-soft);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 14px;
+            color: #104640;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .field label {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            font: inherit;
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .field textarea {
+            min-height: 88px;
+            resize: vertical;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .secondary {
+            background: #ece3d5;
+            color: var(--ink);
+        }
+
+        .status {
+            min-height: 20px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .status.error {
+            color: var(--warn);
+        }
+
+        .note-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .note-card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px;
+            background: #fff;
+        }
+
+        .note-card strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: #ece3d5;
+            color: var(--ink);
+            font-size: 12px;
+            margin-right: 6px;
+        }
+
+        .context-menu {
+            position: fixed;
+            display: none;
+            z-index: 1000;
+            min-width: 200px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: 0 18px 45px rgba(49, 35, 18, 0.16);
+            padding: 10px;
+        }
+
+        .context-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .context-menu button:hover {
+            background: #f6efe4;
+        }
+
+        @media (max-width: 980px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div>
+                <h1>Call Review</h1>
+                <div class="meta">
+                    Call ID: {{ call.ghl_call_id }}<br>
+                    Location: {{ call.ghl_location_id|default:"(missing)" }}<br>
+                    Direction: {{ call.direction }}<br>
+                    Processing: {{ call.processing_status }}
+                </div>
+                <div class="header-actions">
+                    <a class="header-link" href="{% url 'admin:ghl_calls_ghlcall_change' call.id %}" target="_blank">Open Call</a>
+                    <a class="header-link" href="{{ bulk_edit_url }}?kind=answer" target="_blank">Bulk Editor</a>
+                    {% if call.recording_url %}
+                        <a class="header-link" href="{{ call.recording_url }}" target="_blank">Open Audio</a>
+                    {% endif %}
+                    {% if call.contact_id %}
+                        <a class="header-link" href="{% url 'admin:contacts_contact_change' call.contact_id %}" target="_blank">Open Contact</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="meta">
+                Questions: {{ call.questions.count }}<br>
+                Answers: {{ call.answers.count }}<br>
+                Statements: {{ call.statements.count }}<br>
+                Notes: <span id="note-count">{{ notes|length }}</span>
+            </div>
+        </div>
+
+        <div class="shell">
+            <section class="panel">
+                <div class="panel-head">
+                    <h2>Transcript</h2>
+                </div>
+                <div class="panel-body">
+                    <div id="transcript" class="transcript">
+                        <div class="transcript-raw-wrap">
+                            <div class="transcript-raw-head">Full Transcript</div>
+                            <div class="transcript-raw-body">
+                                <div class="transcript-raw">{{ call.transcript_text }}</div>
+                            </div>
+                        </div>
+                        {% if review_segments %}
+                            <div class="flow-tools">
+                                <input id="flow-search" class="flow-search" type="search" placeholder="Search transcript segments">
+                                <select id="flow-kind-filter">
+                                    <option value="">All Types</option>
+                                    <option value="question">Questions</option>
+                                    <option value="answer">Answers</option>
+                                    <option value="statement">Statements</option>
+                                </select>
+                            </div>
+                            <div id="transcript-flow" class="transcript-flow" data-mode="structured">
+                                {% for segment in review_segments %}
+                                    <div
+                                        class="flow-item"
+                                        data-kind="{{ segment.kind }}"
+                                        data-search="{{ segment.kind_label|lower }} {{ segment.text|lower }} {{ segment.question_text|lower }} {{ segment.speaker_role|lower }}"
+                                    >
+                                        <div class="flow-kind">{{ segment.kind_label }}</div>
+                                        <div
+                                            class="flow-text transcript-segment-text"
+                                            data-start="{{ segment.start_index|default:'' }}"
+                                            data-end="{{ segment.end_index|default:'' }}"
+                                        >{{ segment.text }}</div>
+                                        <div class="flow-meta">
+                                            {{ segment.speaker_role }} | {{ segment.start_index|default:"-" }}-{{ segment.end_index|default:"-" }}
+                                        </div>
+                                        {% if segment.question_text %}
+                                            <div class="flow-context">
+                                                Question: {{ segment.question_text }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div id="flow-empty" class="flow-empty">No transcript segments match this filter.</div>
+                        {% else %}
+                            <div class="transcript-raw" data-mode="raw">{{ call.transcript_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="helper">
+                        Highlight the exact word or phrase, then right-click to start a review note.
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel">
+                <div class="panel-head">
+                    <h3>Grade Selected Text</h3>
+                </div>
+                <div class="panel-body">
+                    <form id="note-form">
+                        {% csrf_token %}
+                        <div class="selection-bar">
+                            <div class="selection-meta" id="selection-meta">
+                                Select text from the transcript to begin.
+                            </div>
+
+                            <div class="field">
+                                <label for="edit-option">Action</label>
+                                <select id="edit-option" name="edit_option">
+                                    {% for value, label in edit_options %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="field">
+                                <label for="score-input">Score Impact</label>
+                                <input id="score-input" name="negative_impact_score" type="number" min="-100" max="100" step="1" placeholder="-20">
+                            </div>
+
+                            <div class="field">
+                                <label for="original-text">Original Text</label>
+                                <input id="original-text" name="original_text" type="text" readonly>
+                            </div>
+
+                            <div class="field">
+                                <label for="replacement-text">Replacement Text</label>
+                                <input id="replacement-text" name="replacement_text" type="text" placeholder="No">
+                            </div>
+
+                            <div class="field">
+                                <label for="note-text">Reviewer Note</label>
+                                <textarea id="note-text" name="note" placeholder="Explain what is wrong and why."></textarea>
+                            </div>
+
+                            <div class="actions">
+                                <button type="submit" class="primary">Save Note</button>
+                                <button type="button" class="secondary" id="clear-selection">Clear</button>
+                            </div>
+
+                            <div class="status" id="status"></div>
+                        </div>
+                    </form>
+                </div>
+            </aside>
+        </div>
+
+        <section class="panel" style="margin-top: 20px;">
+            <div class="panel-head">
+                <h3>Existing Notes</h3>
+            </div>
+            <div class="panel-body">
+                <div id="note-list" class="note-list">
+                    {% for note in notes %}
+                        <div class="note-card">
+                            <strong>{{ note.original_text|default:"(no text selected)" }}</strong>
+                            <div>
+                                <span class="badge">{{ note.get_edit_option_display }}</span>
+                                <span class="badge">{{ note.start_index }}-{{ note.end_index }}</span>
+                                {% if note.negative_impact_score is not None %}
+                                    <span class="badge">Score {{ note.negative_impact_score }}</span>
+                                {% endif %}
+                            </div>
+                            {% if note.replacement_text %}
+                                <div style="margin-top: 8px;"><strong>Replace with:</strong> {{ note.replacement_text }}</div>
+                            {% endif %}
+                            {% if note.note %}
+                                <div style="margin-top: 8px;">{{ note.note }}</div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="meta" id="empty-notes">No notes yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="context-menu" class="context-menu">
+        <button type="button" data-edit-option="CHG">Mark as Change / Replace</button>
+        <button type="button" data-edit-option="DEL">Mark as Delete / Remove</button>
+        <button type="button" data-edit-option="ADD">Mark as Add / Missing</button>
+        <button type="button" data-edit-option="MOV">Mark as Reorder / Move</button>
+        <button type="button" data-edit-option="OK">Mark as Perfect as is</button>
+    </div>
+
+    <script>
+        const transcript = document.getElementById("transcript");
+        const selectionMeta = document.getElementById("selection-meta");
+        const originalTextInput = document.getElementById("original-text");
+        const replacementTextInput = document.getElementById("replacement-text");
+        const scoreInput = document.getElementById("score-input");
+        const noteInput = document.getElementById("note-text");
+        const statusEl = document.getElementById("status");
+        const noteForm = document.getElementById("note-form");
+        const clearButton = document.getElementById("clear-selection");
+        const noteList = document.getElementById("note-list");
+        const noteCount = document.getElementById("note-count");
+        const contextMenu = document.getElementById("context-menu");
+        const editOptionSelect = document.getElementById("edit-option");
+        const flowSearch = document.getElementById("flow-search");
+        const flowKindFilter = document.getElementById("flow-kind-filter");
+        const transcriptFlow = document.getElementById("transcript-flow");
+        const flowEmpty = document.getElementById("flow-empty");
+        const csrfToken = document.querySelector("input[name=csrfmiddlewaretoken]").value;
+        const createUrl = "{% url 'ghl_call_review_create_note' call.id %}";
+
+        let currentSelection = null;
+
+        function clearSelectionState() {
+            currentSelection = null;
+            originalTextInput.value = "";
+            replacementTextInput.value = "";
+            scoreInput.value = "";
+            noteInput.value = "";
+            selectionMeta.textContent = "Select text from the transcript to begin.";
+            hideContextMenu();
+        }
+
+        function hideContextMenu() {
+            contextMenu.style.display = "none";
+        }
+
+        function findSegmentContainer(node) {
+            let current = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+            while (current && current !== transcript) {
+                if (current.classList && current.classList.contains("transcript-segment-text")) {
+                    return current;
+                }
+                current = current.parentElement;
+            }
+            return null;
+        }
+
+        function getSelectionOffsets() {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+                return null;
+            }
+
+            const range = selection.getRangeAt(0);
+            if (!transcript.contains(range.commonAncestorContainer)) {
+                return null;
+            }
+
+            const startSegment = findSegmentContainer(range.startContainer);
+            const endSegment = findSegmentContainer(range.endContainer);
+            if (startSegment || endSegment) {
+                if (!startSegment || !endSegment || startSegment !== endSegment) {
+                    return null;
+                }
+
+                const segmentStart = Number(startSegment.dataset.start);
+                if (Number.isNaN(segmentStart)) {
+                    return null;
+                }
+
+                const preSelectionRange = range.cloneRange();
+                preSelectionRange.selectNodeContents(startSegment);
+                preSelectionRange.setEnd(range.startContainer, range.startOffset);
+
+                const localStart = preSelectionRange.toString().length;
+                const text = range.toString();
+                const start = segmentStart + localStart;
+                const end = start + text.length;
+
+                if (!text.trim()) {
+                    return null;
+                }
+
+                return { start, end, text };
+            }
+
+            const preSelectionRange = range.cloneRange();
+            preSelectionRange.selectNodeContents(transcript);
+            preSelectionRange.setEnd(range.startContainer, range.startOffset);
+
+            const start = preSelectionRange.toString().length;
+            const text = range.toString();
+            const end = start + text.length;
+
+            if (!text.trim()) {
+                return null;
+            }
+
+            return { start, end, text };
+        }
+
+        function updateSelectionState(selectionData) {
+            currentSelection = selectionData;
+            originalTextInput.value = selectionData.text;
+            selectionMeta.textContent = `Selected "${selectionData.text}" at ${selectionData.start}-${selectionData.end}`;
+            statusEl.textContent = "";
+            statusEl.className = "status";
+        }
+
+        transcript.addEventListener("mouseup", () => {
+            const selectionData = getSelectionOffsets();
+            if (selectionData) {
+                updateSelectionState(selectionData);
+            }
+        });
+
+        transcript.addEventListener("contextmenu", (event) => {
+            const selectionData = getSelectionOffsets();
+            if (!selectionData) {
+                return;
+            }
+
+            event.preventDefault();
+            updateSelectionState(selectionData);
+            contextMenu.style.display = "block";
+            contextMenu.style.left = `${event.clientX}px`;
+            contextMenu.style.top = `${event.clientY}px`;
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!contextMenu.contains(event.target)) {
+                hideContextMenu();
+            }
+        });
+
+        contextMenu.querySelectorAll("button").forEach((button) => {
+            button.addEventListener("click", () => {
+                editOptionSelect.value = button.dataset.editOption;
+                hideContextMenu();
+                replacementTextInput.focus();
+            });
+        });
+
+        function applyFlowFilters() {
+            if (!transcriptFlow) {
+                return;
+            }
+            const searchValue = (flowSearch?.value || "").trim().toLowerCase();
+            const kindValue = flowKindFilter?.value || "";
+            let visibleCount = 0;
+
+            transcriptFlow.querySelectorAll(".flow-item").forEach((item) => {
+                const matchesSearch = !searchValue || (item.dataset.search || "").includes(searchValue);
+                const matchesKind = !kindValue || item.dataset.kind === kindValue;
+                const visible = matchesSearch && matchesKind;
+                item.style.display = visible ? "" : "none";
+                if (visible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (flowEmpty) {
+                flowEmpty.style.display = visibleCount ? "none" : "block";
+            }
+        }
+
+        flowSearch?.addEventListener("input", applyFlowFilters);
+        flowKindFilter?.addEventListener("change", applyFlowFilters);
+
+        clearButton.addEventListener("click", clearSelectionState);
+
+        noteForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            if (!currentSelection) {
+                statusEl.textContent = "Select text before saving a note.";
+                statusEl.className = "status error";
+                return;
+            }
+
+            const payload = {
+                start_index: currentSelection.start,
+                end_index: currentSelection.end,
+                edit_option: editOptionSelect.value,
+                negative_impact_score: scoreInput.value,
+                original_text: originalTextInput.value,
+                replacement_text: replacementTextInput.value,
+                note: noteInput.value,
+            };
+
+            const response = await fetch(createUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const body = await response.json();
+            if (!response.ok) {
+                statusEl.textContent = body.error || "Could not save note.";
+                statusEl.className = "status error";
+                return;
+            }
+
+            const emptyState = document.getElementById("empty-notes");
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const card = document.createElement("div");
+            card.className = "note-card";
+            card.innerHTML = `
+                <strong>${body.original_text || "(no text selected)"}</strong>
+                <div>
+                    <span class="badge">${editOptionSelect.options[editOptionSelect.selectedIndex].text}</span>
+                    <span class="badge">${body.start_index}-${body.end_index}</span>
+                    ${body.negative_impact_score !== null ? `<span class="badge">Score ${body.negative_impact_score}</span>` : ""}
+                    ${body.segment_type ? `<span class="badge">${body.segment_type}</span>` : ""}
+                </div>
+                ${body.replacement_text ? `<div style="margin-top: 8px;"><strong>Replace with:</strong> ${body.replacement_text}</div>` : ""}
+                ${noteInput.value ? `<div style="margin-top: 8px;">${noteInput.value}</div>` : ""}
+            `;
+            noteList.prepend(card);
+            noteCount.textContent = String(Number(noteCount.textContent) + 1);
+            statusEl.textContent = "Note saved.";
+            statusEl.className = "status";
+            clearSelectionState();
+            window.getSelection().removeAllRanges();
+        });
+    </script>
+</body>
+</html>

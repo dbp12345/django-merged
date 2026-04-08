@@ -1,0 +1,12 @@
+{
+  "name": "Contact Check-in",
+  "short_name": "Check-in",
+  "description": "Scan a contact QR code to check them in.",
+  "start_url": "/pwa1/",
+  "scope": "/pwa1/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd",
+  "orientation": "portrait",
+  "icons": []
+}

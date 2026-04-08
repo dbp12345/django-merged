@@ -485,6 +485,29 @@ urlpatterns = [
         admin.site.admin_view(employees_status_view),
         name="employees_status",
     ),
+    path(
+        "admin/tools/checkin-pwa/",
+        include(("checkin_pwa.urls", "checkin_pwa"), namespace="checkin_pwa"),
+    ),
+    path(
+        "admin/tools/evernote-pwa/",
+        include(("evernote_pwa.urls", "evernote_pwa"), namespace="evernote_pwa"),
+    ),
+    path(
+        "admin/tools/contacts-checkin/",
+        include(("contacts.pwa_urls", "contacts_pwa"), namespace="contacts_pwa"),
+    ),
+    path(
+        "admin/tools/pic-pwa/",
+        include(("pic_pwa.urls", "pic_pwa"), namespace="pic_pwa"),
+    ),
+    path(
+        "admin/tools/id-scanner/",
+        include(("id_scanner.urls", "id_scanner"), namespace="id_scanner"),
+    ),
+    path("admin/tools/integrations/", include("integrations.urls")),
+    path("admin/tools/ghl-calls/", include("ghl_calls.urls")),
+    path("admin/tools/learndash-webhook/", include("learndash_webhook.urls")),
     path("admin/pdf-plugin/", include("pdf_plugin.urls_admin")),
     path("admin/", admin.site.urls),
     path("", include("frontend.urls")),

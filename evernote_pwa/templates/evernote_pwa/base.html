@@ -1,0 +1,95 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b6cb0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Evernote Mirror">
+  <title>{% block title %}Evernote Mirror{% endblock %}</title>
+  <link rel="manifest" href="{% static 'evernote_pwa/manifest.json' %}">
+  <link rel="stylesheet" href="{% static 'evernote_pwa/app.css' %}">
+  <link rel="icon" href="{% static 'evernote_pwa/icon-192.png' %}" type="image/png">
+  <link rel="apple-touch-icon" href="{% static 'evernote_pwa/icon-192.png' %}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'evernote_pwa/icon-192.png' %}">
+</head>
+<body>
+  <header class="shell-header">
+    <button class="shell-icon-button" id="menu-toggle" type="button" aria-expanded="false" aria-controls="app-drawer" aria-label="Open menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <a class="brand" href="{% url 'evernote_pwa:dashboard' %}">Evernote Mirror</a>
+    <a class="shell-home-link" href="{% url 'evernote_pwa:dashboard' %}" aria-label="Home">Home</a>
+  </header>
+
+  <aside class="app-drawer" id="app-drawer" hidden>
+    <div class="drawer-card">
+      <div class="drawer-head">
+        <div>
+          <p class="eyebrow">Menu</p>
+          <h2>Settings</h2>
+        </div>
+        <button class="shell-close-button" id="menu-close" type="button" aria-label="Close menu">Close</button>
+      </div>
+
+      <nav class="drawer-links">
+        <a href="{% url 'evernote_pwa:dashboard' %}">Home</a>
+        <a href="{% url 'evernote_pwa:notebooks' %}">Notebooks</a>
+        <a href="{% url 'evernote_pwa:notes' %}">All Notes</a>
+        <a href="{% url 'evernote_pwa:note_create' %}">New Note</a>
+      </nav>
+
+      <section class="drawer-settings-card">
+        <strong data-install-title>Install this app</strong>
+        <div class="drawer-pill-row">
+          <span class="network-pill" id="network-status">Checking connection</span>
+          <button class="button secondary install-button" id="install-app-button" type="button" hidden>Install</button>
+        </div>
+        <p class="install-subtext" data-install-subtext>Use it like a simple phone-first notes app while Evernote approval is pending.</p>
+        <p class="install-help" data-install-help hidden></p>
+      </section>
+
+      <section class="drawer-settings-card">
+        <a class="button ghost drawer-wide-button" href="{% url 'evernote_pwa:oauth_start' %}">Connect Evernote Later</a>
+      </section>
+    </div>
+  </aside>
+
+  <section class="install-strip">
+    <div>
+      <strong data-install-title>Install this app</strong>
+      <p class="install-subtext" data-install-subtext>Use it like a simple phone-first notes app while Evernote approval is pending.</p>
+      <p class="install-help" data-install-help hidden></p>
+    </div>
+    <div class="install-strip-actions">
+      <span class="network-pill" id="network-status-summary">Checking connection</span>
+      <button class="button secondary install-button" id="install-app-button-summary" type="button" hidden>Install</button>
+    </div>
+  </section>
+
+  {% if messages %}
+    <section class="messages">
+      {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <main class="page-shell">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("{% static 'evernote_pwa/service-worker.js' %}");
+      });
+    }
+  </script>
+  <script src="{% static 'evernote_pwa/app.js' %}"></script>
+</body>
+</html>

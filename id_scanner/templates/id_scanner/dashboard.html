@@ -1,0 +1,129 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#153243">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ID Scanner">
+  <title>ID Scanner</title>
+  <link rel="manifest" href="{% static 'id_scanner/manifest.json' %}">
+  <link rel="stylesheet" href="{% static 'id_scanner/app.css' %}">
+  <link rel="icon" href="{% static 'id_scanner/icon-192.png' %}" type="image/png">
+  <link rel="apple-touch-icon" href="{% static 'id_scanner/icon-192.png' %}">
+  <link rel="apple-touch-icon" sizes="192x192" href="{% static 'id_scanner/icon-192.png' %}">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Phone-first capture</p>
+        <h1>Scan IDs with configurable OCR pipelines.</h1>
+        <p class="hero-text">
+          Choose a group, pick a template, capture a photo, and run only the preprocessing steps that group allows.
+        </p>
+      </div>
+      <div class="hero-card">
+        <h2>Pipeline</h2>
+        <ul class="step-list" id="group-steps">
+          <li>Select a group to view its enabled actions.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <form id="scan-form" class="scan-form">
+        {% csrf_token %}
+        <div class="field-grid">
+          <label>
+            <span>Scan group</span>
+            <select name="group_id" id="group-select" required>
+              <option value="">Select a group</option>
+              {% for group in groups %}
+                <option value="{{ group.id }}">{{ group.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            <span>Template</span>
+            <select name="template_id" id="template-select" required disabled>
+              <option value="">Select a template</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Optional contact ID</span>
+            <input type="number" name="contact_id" inputmode="numeric" placeholder="Attach to contact">
+          </label>
+
+          <label>
+            <span>ID photo</span>
+            <input type="file" name="image" accept="image/*" capture="environment" required>
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button type="submit" id="submit-button">Scan ID</button>
+          <p class="status" id="status-text">Ready.</p>
+        </div>
+      </form>
+    </section>
+
+    <section class="results-grid">
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Latest result</h2>
+          <span class="pill" id="confidence-pill">No scan yet</span>
+        </div>
+        <div id="result-fields" class="result-fields">
+          <p class="empty-state">Your extracted fields will show up here.</p>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Artifacts</h2>
+        </div>
+        <div class="artifact-grid" id="artifact-grid">
+          <p class="empty-state">Processed previews will appear after a scan.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Recent scans</h2>
+      </div>
+      <div class="recent-list">
+        {% for record in recent_records %}
+          <article class="recent-card">
+            <div>
+              <strong>#{{ record.id }}</strong>
+              <p>{{ record.template|default:"No template" }}</p>
+            </div>
+            <div>
+              <span class="pill {{ record.status }}">{{ record.get_status_display }}</span>
+              <p>{{ record.created_at|date:"M j, Y g:i A" }}</p>
+            </div>
+          </article>
+        {% empty %}
+          <p class="empty-state">No scans yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  {{ group_payload|json_script:"group-payload" }}
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("{% static 'id_scanner/service-worker.js' %}");
+      });
+    }
+  </script>
+  <script src="{% static 'id_scanner/app.js' %}"></script>
+</body>
+</html>

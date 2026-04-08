@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Take Profile Picture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; color:#111; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    .muted { color:#666; font-size: 13px; margin: 8px 0 12px; }
+    .card { border: 1px solid #eee; border-radius: 12px; padding: 12px; max-width: 520px; }
+    img { display:block; max-width: 100%; border-radius: 12px; margin-top: 10px; }
+
+    /* Hide native file control */
+    input[type="file"] { display: none; }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 16px;
+      color: #111;              /* ✅ force visible text on iOS */
+      -webkit-text-fill-color: #111; /* ✅ iOS Safari sometimes needs this */
+      flex: 1;
+      min-width: 140px;
+    }
+    .btn-primary { border-color: #0d6efd; }
+    .btn-disabled { opacity: 0.5; }
+    #previewWrap { display:none; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Take Profile Picture</h1>
+
+  <!-- ✅ Use first/last name so it never renders blank -->
+  <div class="muted">
+    Contact: {{ contact.first_name }} {{ contact.last_name }} (ID {{ contact.id }})
+  </div>
+
+  <div class="card">
+    <form id="uploadForm" method="post" enctype="multipart/form-data" action="/pic/{{ contact.id }}/upload/">
+      {% csrf_token %}
+
+      <input
+        id="photoInput"
+        type="file"
+        name="photo"
+        accept="image/*"
+        capture="environment"
+        required
+      />
+
+      <div class="row">
+        <button type="button" id="takeBtn" class="btn btn-primary">Take picture</button>
+
+        <!-- ✅ Explicit label text -->
+        <button type="submit" id="saveBtn" class="btn btn-disabled" disabled>
+          Save picture
+        </button>
+      </div>
+
+      <div id="previewWrap">
+        <div class="muted">Preview:</div>
+        <img id="previewImg" alt="New photo preview" />
+      </div>
+    </form>
+
+    {% if contact.profile_picture %}
+      <div class="muted" style="margin-top:14px;">Current profile picture:</div>
+      <img src="{{ contact.profile_picture.url }}" alt="Current profile picture" />
+    {% endif %}
+  </div>
+
+  <script>
+    const input = document.getElementById("photoInput");
+    const takeBtn = document.getElementById("takeBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const previewWrap = document.getElementById("previewWrap");
+    const previewImg = document.getElementById("previewImg");
+
+    function enableSave() {
+      saveBtn.disabled = false;
+      saveBtn.classList.remove("btn-disabled");
+    }
+    function disableSave() {
+      saveBtn.disabled = true;
+      saveBtn.classList.add("btn-disabled");
+    }
+
+    takeBtn.addEventListener("click", () => input.click());
+
+    input.addEventListener("change", () => {
+      if (!input.files || input.files.length === 0) {
+        previewWrap.style.display = "none";
+        previewImg.src = "";
+        disableSave();
+        return;
+      }
+
+      const file = input.files[0];
+      previewImg.src = URL.createObjectURL(file);
+      previewWrap.style.display = "block";
+      enableSave();
+    });
+
+    // Optional: auto-open camera on load
+    window.addEventListener("load", () => {
+      input.click();
+    });
+  </script>
+</body>
+</html>

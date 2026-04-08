@@ -1,0 +1,68 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scan Contact QR</title>
+
+  <!-- Reuse your existing local QR library -->
+  <script src="{% static 'contacts/pwa/html5-qrcode.min.js' %}"></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; color:#111; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    #reader { width: 100%; max-width: 420px; }
+    .muted { color:#666; font-size: 13px; margin: 8px 0; }
+    .err { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>Scan Contact QR</h1>
+  <div class="muted">QR must be a plain numeric contact id.</div>
+
+  <div id="reader"></div>
+  <div id="status" class="muted"></div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    function setStatus(msg, isErr=false) {
+      statusEl.textContent = msg;
+      statusEl.className = "muted" + (isErr ? " err" : "");
+    }
+
+    function isValidId(text) {
+      return /^\d+$/.test(String(text).trim());
+    }
+
+    async function start() {
+      setStatus("Starting camera...");
+
+      const qr = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+      try {
+        await qr.start(
+          { facingMode: "environment" },
+          config,
+          async (decodedText) => {
+            const v = String(decodedText).trim();
+            if (!isValidId(v)) {
+              setStatus("Scanned but not numeric: " + v, true);
+              return;
+            }
+
+            try { await qr.stop(); } catch(e) {}
+            window.location.href = "/pic/" + v + "/";
+          },
+          () => {}
+        );
+      } catch (e) {
+        setStatus("Camera failed: " + (e && e.message ? e.message : e), true);
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>

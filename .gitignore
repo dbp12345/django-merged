@@ -24,3 +24,5 @@ uploaded_documents/
 cache/
 server/
 node_modules/
+portable-mysql/
+dbfightfire

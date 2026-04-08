@@ -724,6 +724,128 @@ class CustomIndexDashboard(Dashboard):
             )
         )
 
+        self.children.append(
+            modules.Group(
+                title=_("Chloe's Apps"),
+                column=3,
+                collapsible=True,
+                css_classes=("collapse closed grp-closed g-d-12",),
+                children=[
+                    modules.ModelList(
+                        _("Companies"),
+                        models=("companies.*",),
+                    ),
+                    modules.ModelList(
+                        _("Contacts"),
+                        models=("contacts.*",),
+                    ),
+                    modules.LinkList(
+                        _("Contacts Check-in PWA"),
+                        children=[
+                            {
+                                "title": _("Open Check-in Page"),
+                                "url": reverse("contacts_pwa:pwa1_checkin_page"),
+                                "external": False,
+                            },
+                        ],
+                    ),
+                    modules.LinkList(
+                        _("Check-in PWA"),
+                        children=[
+                            {
+                                "title": _("Open Check-in Page"),
+                                "url": reverse("checkin_pwa:index"),
+                                "external": False,
+                            },
+                        ],
+                    ),
+                    modules.Group(
+                        title=_("Evernote PWA"),
+                        children=[
+                            modules.ModelList(
+                                "",
+                                models=("evernote_pwa.*",),
+                            ),
+                            modules.LinkList(
+                                "",
+                                children=[
+                                    {
+                                        "title": _("Dashboard"),
+                                        "url": reverse("evernote_pwa:dashboard"),
+                                        "external": False,
+                                    },
+                                ],
+                            ),
+                        ],
+                    ),
+                    modules.LinkList(
+                        _("Pic PWA"),
+                        children=[
+                            {
+                                "title": _("Open Scanner"),
+                                "url": reverse("pic_pwa:pic_scan"),
+                                "external": False,
+                            },
+                        ],
+                    ),
+                    modules.Group(
+                        title=_("ID Scanner"),
+                        children=[
+                            modules.ModelList(
+                                "",
+                                models=("id_scanner.*",),
+                            ),
+                            modules.LinkList(
+                                "",
+                                children=[
+                                    {
+                                        "title": _("Dashboard"),
+                                        "url": reverse("id_scanner:dashboard"),
+                                        "external": False,
+                                    },
+                                ],
+                            ),
+                        ],
+                    ),
+                    modules.ModelList(
+                        _("Jobs"),
+                        models=("jobs.*",),
+                    ),
+                    modules.ModelList(
+                        _("Invoices"),
+                        models=("invoices.*",),
+                    ),
+                    modules.ModelList(
+                        _("Integrations"),
+                        models=("integrations.*",),
+                    ),
+                    modules.Group(
+                        title=_("GHL Calls"),
+                        children=[
+                            modules.ModelList(
+                                "",
+                                models=("ghl_calls.*",),
+                            ),
+                            modules.LinkList(
+                                "",
+                                children=[
+                                    {
+                                        "title": _("Bulk Edit"),
+                                        "url": reverse("ghl_call_bulk_edit"),
+                                        "external": False,
+                                    },
+                                ],
+                            ),
+                        ],
+                    ),
+                    modules.ModelList(
+                        _("LearnDash Webhook"),
+                        models=("learndash_webhook.*",),
+                    ),
+                ],
+            )
+        )
+
         self.children.append(ChartModule())
 
         # python manage.py shell

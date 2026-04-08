@@ -1,0 +1,79 @@
+name: Deploy Merged Copy to Prod VectorOps
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-vectorops-dev
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_BRANCH: dev
+      LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+      LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+      LIGHTSAIL_PROJECT_PATH: ${{ secrets.LIGHTSAIL_PROJECT_PATH }}
+      LIGHTSAIL_SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+      LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
+      LIGHTSAIL_VENV_PATH: ${{ secrets.LIGHTSAIL_VENV_PATH }}
+      LIGHTSAIL_PYTHON_BIN: ${{ secrets.LIGHTSAIL_PYTHON_BIN }}
+      LIGHTSAIL_PIP_BIN: ${{ secrets.LIGHTSAIL_PIP_BIN }}
+      LIGHTSAIL_RESTART_CMD: ${{ secrets.LIGHTSAIL_RESTART_CMD }}
+      LIGHTSAIL_SYSTEM_PACKAGES: tesseract-ocr libgl1
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          missing=0
+          for var in LIGHTSAIL_HOST LIGHTSAIL_USER LIGHTSAIL_PROJECT_PATH LIGHTSAIL_SSH_KEY; do
+            if [ -z "${!var}" ]; then
+              echo "::error::Missing repository secret: $var"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$LIGHTSAIL_SSH_KEY" > "$HOME/.ssh/lightsail_key"
+          chmod 600 "$HOME/.ssh/lightsail_key"
+
+          if [ -n "$LIGHTSAIL_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$LIGHTSAIL_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          else
+            ssh-keyscan -H "$LIGHTSAIL_HOST" > "$HOME/.ssh/known_hosts"
+          fi
+          chmod 644 "$HOME/.ssh/known_hosts"
+
+      - name: Upload deploy script
+        run: |
+          scp -i "$HOME/.ssh/lightsail_key" \
+            scripts/deploy_lightsail.sh \
+            "$LIGHTSAIL_USER@$LIGHTSAIL_HOST:/tmp/dbfightfire-merged-deploy.sh"
+
+      - name: Run deploy script on Lightsail
+        run: |
+          ssh -i "$HOME/.ssh/lightsail_key" "$LIGHTSAIL_USER@$LIGHTSAIL_HOST" \
+            "chmod +x /tmp/dbfightfire-merged-deploy.sh && \
+             LIGHTSAIL_PROJECT_PATH='$LIGHTSAIL_PROJECT_PATH' \
+             DEPLOY_BRANCH='$DEPLOY_BRANCH' \
+             VENV_PATH='$LIGHTSAIL_VENV_PATH' \
+             PYTHON_BIN='${LIGHTSAIL_PYTHON_BIN:-python}' \
+             PIP_BIN='${LIGHTSAIL_PIP_BIN:-pip}' \
+             RESTART_CMD='$LIGHTSAIL_RESTART_CMD' \
+             SYSTEM_PACKAGES='$LIGHTSAIL_SYSTEM_PACKAGES' \
+             bash /tmp/dbfightfire-merged-deploy.sh"
