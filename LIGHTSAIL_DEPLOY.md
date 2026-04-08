@@ -67,6 +67,8 @@ It expects the standard Lightsail secrets:
 
 Use [prod.env.example](/c:/Users/cyafei/Desktop/Django%20Merge/dbfightfire/prod.env.example) as the starting point for `prod.vectorops.xyz`.
 
+For local merged-copy development, use [local.env.example](/c:/Users/cyafei/Desktop/Django%20Merge/dbfightfire/local.env.example).
+
 ## Current deployment intent
 
 - Deploy merged UI to `prod.vectorops.xyz`

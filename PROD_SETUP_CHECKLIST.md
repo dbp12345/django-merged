@@ -86,6 +86,8 @@ From those results you can set the final GitHub secrets exactly.
 
 Use [prod.env.example](/c:/Users/cyafei/Desktop/Django%20Merge/dbfightfire/prod.env.example) as the template.
 
+For reference on how local and deploy env files are split, see [ENVIRONMENT_GUIDE.md](/c:/Users/cyafei/Desktop/Django%20Merge/dbfightfire/ENVIRONMENT_GUIDE.md).
+
 Recommended starting values:
 
 ```env
