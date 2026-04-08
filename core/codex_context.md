@@ -55,6 +55,7 @@ using SAFE staged migration approach.
 - Lightsail deploy script/docs added for `prod.vectorops.xyz` rollout
 - GitHub Actions deployment workflow and example deploy env template added for `prod.vectorops.xyz`
 - Concrete deployment checklist added for GitHub secrets, server env, DB setup, and smoke testing
+- Local and deploy env example files added, with a guide splitting main-project, subproject, and deployment settings
 
 ## Rules
 - Do NOT modify main models yet
@@ -79,3 +80,4 @@ Current order:
 12. Next deployment target is `prod.vectorops.xyz` using the subproject deployment flow, with subproject data left untouched
 13. Before deployment, set Lightsail secrets/env vars and choose the deployment DB engine for `prod.vectorops.xyz`
 14. Preferred current deployment path: fresh PostgreSQL on `prod.vectorops.xyz` with no main-project data import yet
+15. Env management is now documented with separate local and deploy examples
