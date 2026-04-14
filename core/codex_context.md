@@ -81,3 +81,4 @@ Current order:
 13. Before deployment, set Lightsail secrets/env vars and choose the deployment DB engine for `prod.vectorops.xyz`
 14. Preferred current deployment path: fresh PostgreSQL on `prod.vectorops.xyz` with no main-project data import yet
 15. Env management is now documented with separate local and deploy examples
+#goodluck
