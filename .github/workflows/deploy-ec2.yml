@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - dev   # change to main if needed
+
+workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Add EC2 to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy on EC2
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            cd ${{ secrets.EC2_PROJECT_PATH }}
+            git fetch origin
+            git checkout ${{ secrets.EC2_BRANCH }}
+            git pull origin ${{ secrets.EC2_BRANCH }}
+            source venv/bin/activate
+            python manage.py collectstatic --noinput
+            pkill -f gunicorn || true
+            nohup gunicorn core.wsgi:application --bind 127.0.0.1:8000 > gunicorn.log 2>&1 &
+            sudo systemctl reload nginx || true
+          EOF
