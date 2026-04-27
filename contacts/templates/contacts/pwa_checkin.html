@@ -153,7 +153,8 @@
 
     async function postCheckin(contactId) {
       const csrftoken = getCookie("csrftoken");
-      const url = `/pwa1/api/checkin/${contactId}/`;
+      const urlTemplate = "{% url 'contacts_pwa:pwa1_api_checkin_contact' 0 %}";
+      const url = urlTemplate.replace("/0/", `/${contactId}/`);
 
       const resp = await fetch(url, {
         method: "POST",
