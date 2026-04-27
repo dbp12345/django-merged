@@ -522,7 +522,12 @@ urlpatterns = [
     path("api/employees/", EmployeeDataAPIView.as_view(), name="api_employees_update"),
     path('webpush/', include('webpush.urls')),
     path("", include("django_admin_flexlist.urls")),
-    # path("request/to/exchange/<int:request_to_exchange_id>/<str:operation>",
+    path("checkin/", include("checkin_pwa.urls")),
+    path("evernote/", include("evernote_pwa.urls")),
+    path("id-scan/", include("id_scanner.urls")), 
+
+
+   # path("request/to/exchange/<int:request_to_exchange_id>/<str:operation>",
     #      request_to_exchange, name="request_to_exchange"),
     # path("request/to/privser/<int:request_to_privser_id>",
     #      request_to_privser, name="request_to_privser"),
@@ -540,3 +545,4 @@ if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
     import debug_toolbar
 
     urlpatterns += [path("__debug__/", include(debug_toolbar.urls))]
+
