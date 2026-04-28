@@ -103,6 +103,9 @@ from exchange.views.Exchange.create_test_request import update_fields_from_privs
 from exchange.views.Exchange.request_to_exchange import (
     update_contact_from_exchange_by_email,
 )
+from ghl_calls.views import ghl_call_webhook, ghl_transcript_webhook
+from integrations.views import ghl_oauth_callback, ghl_oauth_start
+from learndash_webhook.views import learndash_webhook
 from paychex.views.paychex.admin_status import employees_status_view
 from paychex.views.paychex.test import PaychexTestView
 from paychex.views.paychex.worker_transactions import (
@@ -505,6 +508,19 @@ urlpatterns = [
         "admin/tools/id-scanner/",
         include(("id_scanner.urls", "id_scanner"), namespace="id_scanner"),
     ),
+    path("oauth/start/", ghl_oauth_start, name="ghl_oauth_start_public"),
+    path("oauth/start", ghl_oauth_start, name="ghl_oauth_start_public_no_slash"),
+    path("oauth/callback/", ghl_oauth_callback, name="ghl_oauth_callback_public"),
+    path("oauth/callback", ghl_oauth_callback, name="ghl_oauth_callback_public_no_slash"),
+    path("api/webhooks/ghl-calls/", include("ghl_calls.urls")),
+    path("api/webhooks/ghl-calls", ghl_call_webhook, name="ghl_call_webhook_api_no_slash"),
+    path(
+        "api/webhooks/ghl-calls/transcript",
+        ghl_transcript_webhook,
+        name="ghl_transcript_webhook_api_no_slash",
+    ),
+    path("api/webhooks/learndash/", include("learndash_webhook.urls")),
+    path("api/webhooks/learndash", learndash_webhook, name="learndash_webhook_api_no_slash"),
     path("admin/tools/integrations/", include("integrations.urls")),
     path("admin/tools/ghl-calls/", include("ghl_calls.urls")),
     path("admin/tools/learndash-webhook/", include("learndash_webhook.urls")),

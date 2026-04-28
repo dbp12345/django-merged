@@ -924,6 +924,7 @@ def normalize_call_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _load_public_key(public_key_pem: str):
+    public_key_pem = (public_key_pem or "").replace("\\n", "\n").strip()
     return serialization.load_pem_public_key(public_key_pem.encode("utf-8"))
 
 
