@@ -11,7 +11,6 @@ class LearndashUser(models.Model):
     email = models.EmailField(blank=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return self.email or f"WP User {self.wp_user_id}"
@@ -27,7 +26,6 @@ class LearndashCourse(models.Model):
     name = models.CharField(max_length=255, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return self.name or f"Course {self.wp_course_id}"

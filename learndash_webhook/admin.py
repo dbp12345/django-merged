@@ -9,13 +9,13 @@ from .models import (
 
 @admin.register(LearndashUser)
 class LearndashUserAdmin(admin.ModelAdmin):
-    list_display = ("wp_user_id", "email", "created_at", "updated_at")
+    list_display = ("wp_user_id", "email", "created_at")
     search_fields = ("wp_user_id", "email")
 
 
 @admin.register(LearndashCourse)
 class LearndashCourseAdmin(admin.ModelAdmin):
-    list_display = ("wp_course_id", "name", "created_at", "updated_at")
+    list_display = ("wp_course_id", "name", "created_at")
     search_fields = ("wp_course_id", "name")
 
 

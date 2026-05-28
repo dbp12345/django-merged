@@ -100,7 +100,7 @@ def learndash_webhook(request: HttpRequest) -> JsonResponse:
         )
         if (not created_user) and user_email and user.email != user_email:
             user.email = user_email
-            user.save(update_fields=["email", "updated_at"])
+            user.save(update_fields=["email"])
 
         # --- Course upsert ---
         course, created_course = LearndashCourse.objects.get_or_create(
@@ -110,7 +110,7 @@ def learndash_webhook(request: HttpRequest) -> JsonResponse:
         # ✅ update if changed and provided
         if (not created_course) and course_name and course.name != course_name:
             course.name = course_name
-            course.save(update_fields=["name", "updated_at"])
+            course.save(update_fields=["name"])
 
         # --- Lesson completed ---
         if event_type == "lesson_completed":
