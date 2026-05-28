@@ -26,3 +26,4 @@ server/
 node_modules/
 portable-mysql/
 dbfightfire
+.env

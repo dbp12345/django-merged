@@ -315,25 +315,18 @@ if db_engine_setting in {"mysql", "django.db.backends.mysql"}:
             "OPTIONS": {
                 "charset": "utf8mb4",
             },
-        }
-    }
-elif db_engine_setting in {"postgres", "postgresql", "django.db.backends.postgresql"}:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": env_first(("DB_NAME", "DJANGO_DB_NAME"), "dbfightfire"),
-            "USER": env_first(("DB_USER", "DJANGO_DB_USER"), "postgres"),
-            "PASSWORD": env_first(("DB_PASSWORD", "DJANGO_DB_PASSWORD"), ""),
-            "HOST": env_first(("DB_HOST", "DJANGO_DB_HOST"), "127.0.0.1"),
-            "PORT": env_first(("DB_PORT", "DJANGO_DB_PORT"), "5432"),
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": env_first(("DJANGO_DB_NAME",), str(BASE_DIR / "db.sqlite3")),
-        }
+        },
+        "main": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": "dbfightfire",
+            "USER": "root",
+            "PASSWORD": "dbfightfire213#__DbF!locK",
+            "HOST": "172.31.46.248",
+            "PORT": "3306",
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        },
     }
 
 # Password validation
