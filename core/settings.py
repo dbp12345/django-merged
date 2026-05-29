@@ -319,8 +319,8 @@ if db_engine_setting in {"mysql", "django.db.backends.mysql"}:
         "main": {
             "ENGINE": "django.db.backends.mysql",
             "NAME": "dbfightfire",
-            "USER": "root",
-            "PASSWORD": "dbfightfire213#__DbF!locK",
+            "USER": "ChloeApp",
+            "PASSWORD": "ChloeAppPaSsWord#1",
             "HOST": "172.31.46.248",
             "PORT": "3306",
             "OPTIONS": {
