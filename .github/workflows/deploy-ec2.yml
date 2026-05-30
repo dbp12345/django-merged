@@ -6,6 +6,13 @@ on:
       - dev
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ec2-dev-deploy
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,16 +21,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate required secrets
+        run: |
+          missing=0
+          for secret_name in EC2_HOST EC2_SSH_KEY EC2_PROJECT_PATH; do
+            if [ -z "${!secret_name}" ]; then
+              echo "::error::Missing repository secret: $secret_name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_PROJECT_PATH: ${{ secrets.EC2_PROJECT_PATH }}
+
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
+          username: ${{ secrets.EC2_USER || 'ec2-user' }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
           script: |
-            cd ~/django-merged
-            git pull origin dev
-            source venv/bin/activate
+            cd "${{ secrets.EC2_PROJECT_PATH }}"
+            git fetch origin dev
+            git checkout dev
+            git pull --ff-only origin dev
+            source "${{ secrets.EC2_VENV_PATH || 'venv/bin/activate' }}"
             pip install -r requirements.txt
             python manage.py migrate
+            python manage.py check
             python manage.py collectstatic --noinput
+            if [ -n "${{ secrets.EC2_RESTART_CMD }}" ]; then
+              ${{ secrets.EC2_RESTART_CMD }}
+            fi

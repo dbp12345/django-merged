@@ -1,9 +1,6 @@
 name: Deploy Merged Copy to Prod VectorOps
 
 on:
-  push:
-    branches:
-      - dev
   workflow_dispatch:
 
 permissions:
